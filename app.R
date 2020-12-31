@@ -6,6 +6,7 @@ library(shinyWidgets)
 library(boastUtils)
 library(hasseDiagram)
 library(shinyMatrix)
+library(stringr)
 
 # Load additional dependencies and setup functions
 linkSurvey <- function(repoName){
@@ -66,6 +67,84 @@ getInputNames <- function(pattern, input = input){
     value = TRUE
   )
   return(sort(temp1))
+}
+
+reduceDF <- function(dataFrame){
+  temp1 <- dataFrame
+  temp2 <- sapply(X = dataFrame$labels, FUN = grepl, pattern = "\\(")
+  for (i in 1:length(temp2)) {
+    if (temp2[i]) {
+      temp1$labels[i] <- gsub(
+        pattern = "\\({1,}",
+        replacement = "",
+        x = temp1$labels[i]
+      )
+      temp1$labels[i] <- gsub(
+        pattern = "\\){1,}",
+        replacement = "",
+        x = temp1$labels[i]
+      )
+    }
+  }
+  for (i in 1:(nrow(temp1) - 1)) {
+    elements <- unlist(strsplit(x = temp1$labels[i], split = " X ", fixed = TRUE))
+    for (j in (i + 1):(nrow(temp1))) {
+      if (all(stringr::str_detect(string = temp1$labels[j], pattern = elements))) {
+        temp1$df[j] <- temp1$df[j] - temp1$df[i]
+      }
+    }
+  }
+  temp1$labels <- dataFrame$labels
+  return(temp1)
+}
+
+makeDiagMatrix <- function(labelList, block = NULL, covariates = NULL){
+  if (length(block) == 0) {block <- NULL}
+  if (length(covariates) == 0) {covariates <- NULL}
+  orderMat <- matrix(
+    data = FALSE,
+    nrow = length(labelList),
+    ncol = length(labelList),
+    dimnames = list(labelList, labelList)
+  )
+  temp1 <- labelList
+  temp2 <- sapply(X = temp1, FUN = grepl, pattern = "\\(")
+  for (i in 1:length(temp2)) {
+    if (temp2[i]) {
+      temp1[i] <- gsub(
+        pattern = "\\({1,}",
+        replacement = "",
+        x = temp1[i]
+      )
+      temp1[i] <- gsub(
+        pattern = "\\){1,}",
+        replacement = "",
+        x = temp1[i]
+      )
+    }
+  }
+  for (i in 1:length(labelList)) {
+    if (grepl(pattern = "\\(Error\\)", x = labelList[i])) {
+      next
+    } else {
+      elements <- unlist(strsplit(x = temp1[i], split = " X ", fixed = TRUE))
+      for (j in (i + 1):length(labelList)) {
+        if (grepl(pattern = "Grand Mean", x = temp1[i], fixed = TRUE)) {
+          orderMat[labelList[i], labelList[j]] <- TRUE
+        } else if (
+          all(
+            any(labelList[j] != block, is.null(block), is.na(block)),
+            any(!(labelList[j] %in% covariates), is.null(covariates), is.na(covariates)),
+            all(stringr::str_detect(string = temp1[j], pattern = elements))
+          )) {
+          orderMat[labelList[i], labelList[j]] <- TRUE
+        } else if (grepl(pattern = "\\(Error\\)", x = labelList[j])) {
+          orderMat[labelList[i], labelList[j]] <- TRUE
+        }
+      }
+    }
+  }
+  return(orderMat)
 }
 
 mePlaceholder <- "E.g., dosage, sex, age group"
@@ -378,9 +457,11 @@ ui <- list(
                 code to paste into a code chunk or your console to create your
                 Hasse diagram.",
                 br(),
+                verbatimTextOutput("rCode"),
                 br(),
                 tags$em("Note: "),
-                "you'll need to first have the appropriate packages installed."
+                "you'll need to first have the appropriate packages installed as
+                well as loaded in your current R session."
               ),
               br(),
               fluidRow(
@@ -435,6 +516,13 @@ ui <- list(
               p(
                 "If you are unsure about how to use this page, please return to
                 the prior pages and work through the diagram wizard."
+              ),
+              matrixInput(
+                inputId = "advEdit",
+                label = "Hasse Diagram Matrix",
+                value = matrix("", 1, 1),
+                rows = list(names = TRUE, editableNames = TRUE),
+                cols = list(names = TRUE)
               ),
               tags$ul(
                 tags$li("matrixInput"),
@@ -499,7 +587,7 @@ server <- function(input, output, session) {
 
   ## Set up Reactive Values ----
   labels <- reactiveValues()
-  finalMatrix <- reactiveVal(grandMeanRow)
+  finalLabelFrame <- reactiveVal(grandMeanRow)
 
   ## First go button ----
   observeEvent(
@@ -535,7 +623,7 @@ server <- function(input, output, session) {
       if (is.null(input$mainEffects) || input$mainEffects == "") {
         sendSweetAlert(
           session = session,
-          title = "Error",
+          title = "Main Effect Error",
           type = "error",
           text = "You must enter at least one main effect."
         )
@@ -711,93 +799,118 @@ server <- function(input, output, session) {
   observeEvent(
     eventExpr = input$next2,
     handlerExpr = {
-      #### Move tabs ----
-      updateTabsetPanel(
-        session = session,
-        inputId = "builder",
-        selected = "third"
-      )
+      #### Error Check ----
+      if (is.null(input$totalSize) || input$totalSize <= 0 || is.na(input$totalSize)) {
+        sendSweetAlert(
+          session = session,
+          title = "Sample Size Error",
+          type = "error",
+          text = "You've not entered a valid sample size. Please fix this issue."
+        )
+      } else {
 
-      #### Apply Random to Main Effects ----
-      temp1 <- getInputNames(pattern = "^me[[:digit:]]{0,}Random$", input = input)
-      for (i in 1:length(temp1)) {
-        if (input[[temp1[i]]]) {
-          labels$mainEffects[i] <- paste0("(", labels$mainEffects[i], ")")
+        #### Apply Random to Main Effects ----
+        temp1 <- getInputNames(pattern = "^me[[:digit:]]{0,}Random$", input = input)
+        for (i in 1:length(temp1)) {
+          if (input[[temp1[i]]]) {
+            labels$mainEffects[i] <- paste0("(", labels$mainEffects[i], ")")
+          }
         }
-      }
 
-      #### Apply Random to Block ----
-      if (!is.null(input$blockRandom) && input$blockRandom) {
-        labels$block <- paste0("(", labels$block, ")")
-      }
+        #### Apply Random to Block ----
+        if (!is.null(input$blockRandom) && input$blockRandom) {
+          labels$block <- paste0("(", labels$block, ")")
+        }
 
-      #### Create interactions list ----
-      labels$interactions <- list()
-      for (i in 2:length(labels$mainEffects)) {
-        labels$interactions[[paste0("l", i)]] <- t(
-          combn(
-            x = labels$mainEffects,
-            m = i,
-            simplify = TRUE,
-            FUN = paste,
-            collapse = " X "
+        #### Get level values of Main Effects ----
+        temp1 <- getInputNames(pattern = "^me[[:digit:]]+Levels$", input = input)
+        temp2 <- c()
+        for (i in 1:length(temp1)) {
+          temp2 <- c(temp2, input[[temp1[i]]])
+        }
+
+        #### Create interactions list ----
+        if (length(labels$mainEffects) >= 2) {
+          labels$interactions <- list()
+          for (i in 2:length(labels$mainEffects)) {
+            labels$interactions[[paste0("l", i)]] <- t(
+              combn(
+                x = labels$mainEffects,
+                m = i,
+                simplify = TRUE,
+                FUN = paste,
+                collapse = " X "
+              )
+            )
+          }
+          labels$interactions <- unlist(labels$interactions)
+
+          #### Apply Random Effects to Interactions ----
+          temp1 <- sapply(X = labels$interactions, FUN = grepl, pattern = "\\(")
+          for (i in 1:length(temp1)) {
+            if (temp1[i]) {
+              labels$interactions[i] <- gsub(
+                pattern = "\\({1,}",
+                replacement = "",
+                x = labels$interactions[i]
+              )
+              labels$interactions[i] <- gsub(
+                pattern = "\\){1,}",
+                replacement = "",
+                x = labels$interactions[i]
+              )
+              labels$interactions[i] <- paste0("(", labels$interactions[i], ")")
+            }
+          }
+          #### Set initial interaction levels ----
+          temp3 <- list()
+          for (i in 2:length(labels$mainEffects)) {
+            temp3[[paste0("l", i)]] <- combn(
+              x = temp2,
+              m = i,
+              simplify = TRUE,
+              FUN = prod
+            )
+          }
+          labels$intLevels <- lapply(temp3, function(x) x[!is.na(x)])
+          labels$intLevels <- unlist(labels$intLevels)
+
+          #### Create the interaction level matrix and display ----
+          interactionMatrix <- matrix(
+            data = labels$intLevels,
+            nrow = length(labels$interactions),
+            ncol = 1
           )
+          row.names(interactionMatrix) <- unname(labels$interactions)
+          updateMatrixInput(
+            session = session,
+            inputId = "interactionLevels",
+            value = interactionMatrix
+          )
+        } else {
+          interactionMatrix <- matrix(
+            data = 0,
+            nrow = 1,
+            ncol = 1
+          )
+          row.names(interactionMatrix) <- "No interactions possible."
+          updateMatrixInput(
+            session = session,
+            inputId = "interactionLevels",
+            value = interactionMatrix
+          )
+        }
+
+        #### Move tabs ----
+        updateTabsetPanel(
+          session = session,
+          inputId = "builder",
+          selected = "third"
         )
       }
-      labels$interactions <- unlist(labels$interactions)
-
-      #### Apply Random Effects to Interactions ----
-      temp1 <- sapply(X = labels$interactions, FUN = grepl, pattern = "\\(")
-      for (i in 1:length(temp1)) {
-        if (temp1[i]) {
-          labels$interactions[i] <- gsub(
-            pattern = "\\({1,}",
-            replacement = "",
-            x = labels$interactions[i]
-          )
-          labels$interactions[i] <- gsub(
-            pattern = "\\){1,}",
-            replacement = "",
-            x = labels$interactions[i]
-          )
-          labels$interactions[i] <- paste0("(", labels$interactions[i], ")")
-        }
-      }
-
-      #### Get level values of Main Effects ----
-      temp1 <- getInputNames(pattern = "^me[[:digit:]]+Levels$", input = input)
-      temp2 <- c()
-      for (i in 1:length(temp1)) {
-        temp2 <- c(temp2, input[[temp1[i]]])
-      }
-
-      #### Set initial interaction levels ----
-      temp3 <- list()
-      for (i in 2:length(labels$mainEffects)) {
-        temp3[[paste0("l", i)]] <- combn(
-          x = temp2,
-          m = i,
-          simplify = TRUE,
-          FUN = prod
-        )
-      }
-      labels$intLevels <- lapply(temp3, function(x) x[!is.na(x)])
-      labels$intLevels <- unlist(labels$intLevels)
-
-      #### Create the interaction level matrix and display ----
-      interactionMatrix <- matrix(
-        data = labels$intLevels,
-        nrow = length(labels$interactions),
-        ncol = 1
-      )
-      row.names(interactionMatrix) <- unname(labels$interactions)
-      updateMatrixInput(
-        session = session,
-        inputId = "interactionLevels",
-        value = interactionMatrix
-      )
-      remove(list = c("temp1", "temp2", "temp3"))
-    }
+    },
+    ignoreNULL = TRUE,
+    ignoreInit = TRUE
   )
 
   ## Builder Page 3 ----
@@ -811,7 +924,7 @@ server <- function(input, output, session) {
         inputId = "builder",
         selected = "second"
       )
-      finalMatrix(grandMeanRow)
+      finalLabelFrame(grandMeanRow)
       interactionMatrix <- NULL
       labels$intLevels <- NULL
       labels$interactions <- NULL
@@ -822,14 +935,7 @@ server <- function(input, output, session) {
   observeEvent(
     eventExpr = input$next3,
     handlerExpr = {
-      #### Move tab ----
-      updateTabsetPanel(
-        session = session,
-        inputId = "builder",
-        selected = "fourth"
-      )
       #### Create matrix of labels and levels ----
-      #print(names(input))
       temp1 <- getInputNames("^me[[:digit:]]{0,}Levels$", input = input)
       temp2 <- c()
       for (i in 1:length(temp1)) {
@@ -845,84 +951,107 @@ server <- function(input, output, session) {
         labels = unlist(dimnames(input$interactionLevels)[1]),
         df = unname(input$interactionLevels[,1])
       )
-      finalMatrix(
+      finalLabelFrame(
         rbind(grandMeanRow, temp3, temp4)
       )
       remove(list = c("temp1", "temp2", "temp3", "temp4"))
+      finalLabelFrame(subset(x = finalLabelFrame(), subset = levels > 0))
+      finalLabelFrame(reduceDF(dataFrame = finalLabelFrame()))
 
-      finalMatrix(subset(x = finalMatrix(), subset = levels > 0))
-      print(finalMatrix())
+      ##### Add Block and Covariates ----
+      if (!is.null(labels$block) && length(labels$block) == 1) {
+        finalLabelFrame(
+          rbind(
+            finalLabelFrame(),
+            data.frame(
+              levels = input$blockLevels,
+              labels = labels$block,
+              df = input$blockLevels - 1
+            )
+          )
+        )
+      }
+      if (!is.null(labels$covariates)) {
+        temp1 <- data.frame(
+          levels = rep("Cov", times = length(labels$covariates)),
+          labels = labels$covariates,
+          df = rep(1, times = length(labels$covariates))
+        )
+        finalLabelFrame(
+          rbind(
+            finalLabelFrame(),
+            temp1
+          )
+        )
+      }
+      ##### Add Final Error Term ----
+      finalLabelFrame(
+        rbind(
+          finalLabelFrame(),
+          data.frame(
+            levels = input$totalSize,
+            labels = "(Error)",
+            df = input$totalSize - sum(finalLabelFrame()$df)
+          )
+        )
+      )
+      labels$matrixLabels <- paste(
+        finalLabelFrame()$levels,
+        finalLabelFrame()$labels,
+        finalLabelFrame()$df
+      )
+
+      #### Move tab ----
+      updateTabsetPanel(
+        session = session,
+        inputId = "builder",
+        selected = "fourth"
+      )
     }
   )
 
 
   ## Builder Page 4 ----
-  ### Build Label List ----
-  # masterLabels <- eventReactive(
-  #   eventExpr = input$next2,
-  #   valueExpr = {
-  #     usedFreedom <- 1
-  #    c(
-  #      "1 Grand Mean 1",
-  #      for (i in length(labels$mainEffects)) {
-  #        paste(
-  #          input[[paste0("me", i, "Levels")]],
-  #          ifelse(
-  #            test = input[[paste0("me", i, "Random")]] == FALSE,
-  #            yes = paste0("(", labels$mainEffects[i], ")"),
-  #            no = labels$mainEffects[i]
-  #          ),
-  #          input[[paste0("me", i, "Levels")]] - 1
-  #        )
-  #        usedFreedom <- usedFreedom + input[[paste0("me", i, "Levels")]] - 1
-  #      },
-  #      if (nrow(labels$interactions) >= 1) {
-  #        for (i in nrow(labels$interactions)) {
-  #          if (input[[paste0("inter"), i]] == TRUE) {
-  #            next
-  #          } else {
-  #            paste(
-  #              input[[paste0("inter", i, "Levels")]],
-  #              ifelse(
-  #                test = input[[paste0("inter", i, "Random")]] == FALSE,
-  #                yes = paste0("(", labels$interactions[i, 1], " X ",
-  #                             labels$interactions[i, 2], ")"),
-  #                no = paste0(labels$interactions[i, 1], " X ",
-  #                            labels$interactions[i, 2])
-  #              ),
-  #              input[[paste0("inter", i, "Levels")]] -
-  #            )
-  #          }
-  #        }
-  #      }
-  #      if (length(labels$block) = 1) {
-  #        paste(
-  #          input$blockLevels,
-  #          labels$block,
-  #          input$blockLevels - 1
-  #        )
-  #        usedFreedom <- usedFreedom + input$blockLevels - 1
-  #      },
-  #      if (length(label$covariates) >= 1) {
-  #        for (i in length(labels$covariates)) {
-  #          paste(
-  #            "Cov",
-  #            labels$covariates[i],
-  #            1
-  #          )
-  #          usedFreedom <- usedFreedom + 1
-  #        }
-  #      },
-  #      paste(
-  #        input$totalSize,
-  #        "(Error)",
-  #        input$totalSize - usedFreedom
-  #      )
-  #    )
-  #   }
-  # )
+  output$hasseDiagram <- renderPlot(
+    expr = {
+      hasseDiagram::hasse(
+        data = makeDiagMatrix(
+          labelList = finalLabelFrame()$labels,
+          block = labels$block,
+          covariates = labels$covariates
+        ),
+        labels = labels$matrixLabels
+      )
+    }
+  )
 
-  ### Go back to Page 2 ----
+  output$rCode <- renderText({
+    labs <- paste0('"', labels$matrixLabels, '"', collapse = ", ")
+    mat <- paste0(unname(
+            obj = makeDiagMatrix(
+              labelList = finalLabelFrame()$labels,
+              block = labels$block,
+              covariates = labels$covariates
+            ),
+            force = TRUE
+          ),
+          collapse = ", "
+    )
+     paste0(
+       'modelLabels <- c(', labs, ')
+modelMatrix <- matrix(
+  data = c(', mat, '),
+  nrow = ', length(finalLabelFrame()$labels), ',
+  ncol = ', length(finalLabelFrame()$labels), '
+)
+hasseDiagram::hasse(
+ data = modelMatrix,
+ labels = modelLabels
+)'
+     )
+  })
+
+  ### Go back to Page 3 ----
   observeEvent(
     eventExpr = input$back3,
     handlerExpr = {
@@ -936,8 +1065,13 @@ server <- function(input, output, session) {
 
   ### Start Over ----
   observeEvent(
-    eventExpr = c(input$reset4, input$reset5),
+    eventExpr = input$reset4,
     handlerExpr = {
+      updateTabsetPanel(
+        session = session,
+        inputId = "builder",
+        selected = "first"
+      )
       resetInputs(
         session = session,
         textList = c("mainEffects", "block", "covariates"),
@@ -947,12 +1081,6 @@ server <- function(input, output, session) {
         ),
         switchList = getInputNames(pattern = "Random$", input = input),
         checkList = NULL
-      )
-
-      updateTabsetPanel(
-        session = session,
-        inputId = "builder",
-        selected = "first"
       )
     },
     ignoreNULL = TRUE,
@@ -972,6 +1100,24 @@ server <- function(input, output, session) {
   )
 
   ## Advanced Edit Page ----
+  observeEvent(
+    eventExpr = input$builder,
+    handlerExpr = {
+      if (input$builder == "fifth") {
+        orderMat <- makeDiagMatrix(
+          labelList = finalLabelFrame()$labels,
+          block = labels$block,
+          covariates = labels$covariates
+        )
+        dimnames(orderMat) <- list(labels$matrixLabels, labels$matrixLabels)
+        updateMatrixInput(
+          session = session,
+          inputId = "advEdit",
+          value = orderMat
+        )
+      }
+    }
+  )
 
 }
 
