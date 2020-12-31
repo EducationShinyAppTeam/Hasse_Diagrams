@@ -233,7 +233,7 @@ ui <- list(
             br(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 12/14/2020 by NJH.")
+            div(class = "updated", "Last Update: 12/31/2020 by NJH.")
           )
         ),
         #### Explore Page ----
@@ -241,7 +241,113 @@ ui <- list(
           tabName = "explore",
           withMathJax(),
           h2("Exploring Hasse Diagrams"),
-          p("This page will be filled in later. ")
+          p(
+            "Hasse diagrams (also known as poset or factor structure diagrams)
+            serve as a way to visualize the model for an experiment or observational
+            study. In Analysis of Variance/Design of Experiments settings, a
+            Hasse diagram allows the statistician to display relationships between
+            factors in the study without having to resort of algebraic notation.
+            Each node in the Hasse diagram corresponds to a term in the algebraic
+            model as well as a screen that you pass data through."
+          ),
+          p(
+            "Further, the Hasse diagram allows the user to keep track of how many
+            levels each factor/term has, whether of the factor/term is a fixed or
+            random effect, as well as the number of degrees of freedom are available
+            both for each term and the overall model."
+          ),
+          box(
+            title = "Oneway Example and Explanation of Components",
+            width = 12,
+            collapsible = TRUE,
+            collapsed = FALSE,
+            p(
+              "Let's look at a Hasse diagram from a Oneway ANOVA model involving
+            four different dosages of a new drug to reduce how long a person feels
+            neck pain after tacking the new drug."
+            ),
+            plotOutput("exampleHD1"),
+            p(
+              "All Hasse diagrams have two common nodes: the Grand Mean term at the
+            top of the diagram and an Error term at the bottom. Hasse diagrams
+            are linked to the Factor Effects model of ANOVA rather than the Cell
+            Means model. All other nodes depend upon the model you're building.
+            In our example, we have one factor--the drug dosage each person gets.
+            Since this is a main effect, this node goes in-between the Grand Mean
+            and the Error."
+            ),
+            p(
+              "You'll notice that there are numbers of either side of each term.",
+              br(),
+              br(),
+              "To the left, the number represents the number of levels for that term.
+            There will always be just 1 Grand Mean value for any model. In our
+            example, we have four different dosages, thus there are four levels
+            to the dosage factor. The number of levels for the Error term is the
+            same as the total sample size for the study. In our case, we have 40
+            people taking part. Further, we know we have the possibility of a
+            balanced design since 40/4 = 10 (no remainder). Keep in mind that a
+            remainder of 0 does not guarantee a balanced design.",
+              br(),
+              br(),
+              "To the right, the number represents the degrees of freedom used by
+            that particular term. The Grand Mean value will always use one degree
+            of freedom (as will each covariate). For all other terms, the degrees
+            of freedom will be the term's number of levels minus the degrees of
+            freedom used by each connected term located higher up in the diagram."
+            ),
+            p(
+              "You'll also notice that Error appears inside a set of parentheses.
+            Parentheses around a term's label denote that we consider that term
+            to be Random Effect. (No parentheses then means a Fixed Effect.) The
+            final node in the Hasse diagram will always be an Error term and will
+            always be a Random Effect.
+            "
+            )
+          ),
+          box(
+            title = "A More Complicated Example",
+            width = 12,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            p(
+              "Let's revist the neck pain relief example. This time, the client
+              wants to account for how old the person is (in years) as well as
+              which of 5 participating clincs the person receives treatment. In
+              addition to the dosage, we will also look at the effect of the
+              person's sex (female, intersex, male) and the interaction of the
+              dosage and sex. This sets up a two-way ANOVA model with both a block
+              (clinic) and a covariate (age). Turning this into a Hasse diagram,
+              we get the following:"
+            ),
+            plotOutput("exampleHD2")
+          ),
+          p(
+            "You can use the Hasse diagram to help you identify the correct
+            denominator to use in forming the ", tags$em("F"), "-ratio to test a
+            term in the model. Simply follow these steps:",
+            tags$ol(
+              tags$li("Locate the term/node you want to test in the diagram."),
+              tags$li("Identify all terms/nodes below that node which involve a
+                      Random Effect. Note: follow the arrows down from the target
+                      node."),
+              tags$li(
+                "Check the eligibility of the random effect nodes:",
+                tags$ul(
+                  tags$li(tags$strong("Unrestricted: "), "all terms are eligibile."),
+                  tags$li(tags$strong("Restricted: "), "only terms which do not
+                          contain any new fixed effect factors are eligible")
+                )
+              ),
+              tags$li("Identify which of the eligible term(s) is located the closest
+                      to the target term/node. That is, which one(s) is highest
+                      up the diagram. This is your Leading Term"),
+              tags$li("If there is only one Leading Term, use that term's Mean
+                      Square as the denominator."),
+              tags$li("If there are multiple Leading Terms, you'll have to use
+                      an approximate test.")
+            )
+          )
         ),
         #### Build a Diagram Page ----
         tabItem(
@@ -597,6 +703,35 @@ server <- function(input, output, session) {
         session = session,
         inputId = "pages",
         selected = "explore"
+      )
+    }
+  )
+
+  ## Explore Page ----
+  output$exampleHD1 <- renderPlot(
+    expr = {
+      labs <- c("1 Grand Mean 1", "4 Dosage 3", "40 (Error) 36")
+      mat <- matrix(data = F, nrow = 3, ncol = 3)
+      mat[1, c(2,3)] <- T
+      mat[2, 3] <- T
+      hasseDiagram::hasse(
+        data = mat,
+        labels = labs
+      )
+    }
+  )
+
+  output$exampleHD2 <- renderPlot(
+    expr = {
+      labs <- c("1 Grand Mean 1", "5 Clinic 4", "4 Dosage 3", "3 Sex 2",
+                "Cov Age 1", "12 Dosage X Sex 6", "600 (Error) 583")
+      mat <- matrix(data = F, nrow = 7, ncol = 7)
+      mat[1, c(2:7)] <- T
+      mat[c(2, 5, 6), 7] <- T
+      mat[c(3:4), c(6:7)] <- T
+      hasseDiagram::hasse(
+        data = mat,
+        labels = labs
       )
     }
   )
@@ -1001,12 +1136,24 @@ server <- function(input, output, session) {
         finalLabelFrame()$df
       )
 
-      #### Move tab ----
-      updateTabsetPanel(
-        session = session,
-        inputId = "builder",
-        selected = "fourth"
-      )
+      #### Error Check and Move tab ----
+      if (any(finalLabelFrame()$df <= 0)) {
+        sendSweetAlert(
+          session = session,
+          title = "Degree of Freedom Error",
+          type = "error",
+          text = "Your inputs have resulted in one or more terms have 0 or negative
+          degrees of freedom. You will need to go back and check both your Total
+          Sample Size as well as any interactions."
+        )
+      } else {
+        updateTabsetPanel(
+          session = session,
+          inputId = "builder",
+          selected = "fourth"
+        )
+      }
+
     }
   )
 
@@ -1043,6 +1190,7 @@ modelMatrix <- matrix(
   data = c(', mat, '),
   nrow = ', length(finalLabelFrame()$labels), ',
   ncol = ', length(finalLabelFrame()$labels), '
+  byrow = FALSE
 )
 hasseDiagram::hasse(
  data = modelMatrix,
@@ -1065,7 +1213,7 @@ hasseDiagram::hasse(
 
   ### Start Over ----
   observeEvent(
-    eventExpr = input$reset4,
+    eventExpr = c(input$reset4, input$reset5),
     handlerExpr = {
       updateTabsetPanel(
         session = session,
