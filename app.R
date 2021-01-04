@@ -311,7 +311,7 @@ ui <- list(
             collapsible = TRUE,
             collapsed = TRUE,
             p(
-              "Let's revist the neck pain relief example. This time, the client
+              "Let's revisit the neck pain relief example. This time, the client
               wants to account for how old the person is (in years) as well as
               which of 5 participating clincs the person receives treatment. In
               addition to the dosage, we will also look at the effect of the
@@ -320,7 +320,23 @@ ui <- list(
               (clinic) and a covariate (age). Turning this into a Hasse diagram,
               we get the following:"
             ),
-            plotOutput("exampleHD2")
+            plotOutput("exampleHD2"),
+            p(
+              "You'll notice that both the block (Clinc) and the covariate (Age
+              of the person) appear below the Grand Mean and above the Error term.
+              Keep in mind that we do not cross (or nest) either blocks or covariates
+              with our main effects. You'll also notice that instead of a number
+              of levels, the Age term has 'Cov' on the left to denote that this
+              is a covariate."
+            ),
+            p(
+              "Since we now have two main effects, we will use a two-way model
+              and look at the interaction of those effects (i.e., Dosage X Sex).
+              Interactions (and other higher order terms) appear below (nested in)
+              the lower order main effects involved. When it comes to Hasse diagrams,
+              the lower order an effect is, the higher up in the diagram the term
+              appears."
+            )
           ),
           p(
             "You can use the Hasse diagram to help you identify the correct
