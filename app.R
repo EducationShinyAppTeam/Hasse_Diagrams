@@ -267,6 +267,12 @@ ui <- list(
             neck pain after tacking the new drug."
             ),
             plotOutput("exampleHD1"),
+            tags$script(HTML(
+              "$(document).ready(function() {
+              document.getElementById('exampleHD1').setAttribute('aria-label',
+              `Hasse diagram for oneway anova model involving drug dosage levels`)
+              })"
+            )),
             p(
               "All Hasse diagrams have two common nodes: the Grand Mean term at the
             top of the diagram and an Error term at the bottom. Hasse diagrams
@@ -321,6 +327,13 @@ ui <- list(
               we get the following:"
             ),
             plotOutput("exampleHD2"),
+            tags$script(HTML(
+              "$(document).ready(function() {
+              document.getElementById('exampleHD2').setAttribute('aria-label',
+              `Hasse diagram for twoeway anova model involving drug dosage levels,
+              patient sex, a block for clinic, and covariate of patient age.`)
+              })"
+            )),
             p(
               "You'll notice that both the block (Clinc) and the covariate (Age
               of the person) appear below the Grand Mean and above the Error term.
@@ -566,6 +579,12 @@ ui <- list(
                 style = "text-align: center;",
                 plotOutput("hasseDiagram")
               ),
+              tags$script(HTML(
+                "$(document).ready(function() {
+              document.getElementById('hasseDiagram').setAttribute('aria-label',
+              `Your Hasse diagram`)
+              })"
+              )),
               p(
                 "To copy/paste your diagram, right-click (secondary click) on
                 the diagram and select 'Copy Image'. Then in your word processing
@@ -689,6 +708,12 @@ ui <- list(
                 style = "text-align: center;",
                 plotOutput("newHasseDiagram")
               ),
+              tags$script(HTML(
+                "$(document).ready(function() {
+              document.getElementById('newHasseDiagram').setAttribute('aria-label',
+              `Your updated Hasse diagram`)
+              })"
+              )),
               h3("Updated Generating Code"),
               p(
                 "If you are using R Markdown (or R), you can copy the following
