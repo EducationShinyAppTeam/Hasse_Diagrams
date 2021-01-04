@@ -233,7 +233,7 @@ ui <- list(
             br(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 12/31/2020 by NJH.")
+            div(class = "updated", "Last Update: 1/4/2021 by NJH.")
           )
         ),
         #### Explore Page ----
@@ -358,7 +358,7 @@ ui <- list(
           br(),
           tabsetPanel(
             id = "builder",
-            type = "tabs",
+            type = "hidden",
             ##### First Entry Tab ----
             tabPanel(
               title = "first",
@@ -627,32 +627,148 @@ ui <- list(
                 inputId = "advEdit",
                 label = "Hasse Diagram Matrix",
                 value = matrix("", 1, 1),
+                class = "character",
                 rows = list(names = TRUE, editableNames = TRUE),
                 cols = list(names = TRUE)
               ),
-              tags$ul(
-                tags$li("matrixInput"),
-                tags$li("button to update matrix"),
-                tags$li("button to add row/column"),
-                tags$li("button to remove row/column"),
-                tags$li("button to update diagrams"),
-                tags$li("button to go back WITHOUT changes"),
-                tags$li("button to start over")
+              fluidRow(
+                column(
+                  width = 4,
+                  bsButton(
+                    inputId = "updateLabels",
+                    label = "Update row/column labels",
+                    size = "large"
+                  )
+                ),
+                column(
+                  width = 3,
+                  bsButton(
+                    inputId = "addRowCol",
+                    label = "Add row/column",
+                    size = "large",
+                    style = "warning"
+                  )
+                ),
+                column(
+                  width = 3,
+                  bsButton(
+                    inputId = "removeRowCol",
+                    label = "Remove row/column",
+                    size = "large",
+                    style = "danger"
+                  )
+                ),
+                column(
+                  width = 2,
+                  bsButton(
+                    inputId = "updateDiagram",
+                    label = "Update diagram",
+                    size = "large",
+                    style = "default"
+                  )
+                )
+              ),
+              h3("Updated Diagram"),
+              div(
+                style = "text-align: center;",
+                plotOutput("newHasseDiagram")
+              ),
+              h3("Updated Generating Code"),
+              p(
+                "If you are using R Markdown (or R), you can copy the following
+                code to paste into a code chunk or your console to create your
+                Hasse diagram.",
+                br(),
+                verbatimTextOutput("newRCode"),
+              ),
+              fluidRow(
+                column(
+                  width = 6,
+                  bsButton(
+                    inputId = "back4",
+                    label = "Back (no changes)",
+                    icon = icon("backward"),
+                    size = "large"
+                  )
+                ),
+                column(
+                  width = 6,
+                  div(
+                    style = "text-align: right;",
+                    bsButton(
+                      inputId = "reset5",
+                      label = "Start Over",
+                      icon = icon("exclamation-triangle"),
+                      size = "large",
+                      style = "danger"
+                    )
+                  )
+                )
               )
             )
           )
         ),
         #### Set up the References Page ----
         tabItem(
-          tabName = "References",
+          tabName = "references",
           withMathJax(),
           h2("References"),
           p(
             class = "hangingindent",
-            "Bailey, E. (2015). shinyBS: Twitter bootstrap components for shiny.
+            "Bailey, E. (2015), shinyBS: Twitter bootstrap components for shiny.
             (v0.61). [R package]. Available from
             https://CRAN.R-project.org/package=shinyBS"
           ),
+          p(
+            class = "hangingindent",
+            "Carey, R. and Hatfield, N. (2020), boastUtils: BOAST Utilities.
+            (v. 0.1.10.2), [R Package] Available from
+            https://github.com/EducationShinyAppTeam/boastUtils"
+          ),
+          p(
+            class = "hangingindent",
+            "Chang, W., Borges Ribeiro, B. (2018), shinydashboard: Create dashboards
+            with 'Shiny'.(v. 0.7.1) [R package] Available from
+            https://CRAN.R-project.org/package=shinydashboard"
+          ),
+          p(
+            class = "hangingindent",
+            "Chang, W., Cheng, J., Allaire, J. J., Xie, Y., McPherson, J. (2020),
+            shiny: Web application framework for R. (v. 1.5.0) [R package] Available
+            from https://CRAN.R-project.org/package=shiny"
+          ),
+          p(
+            class = "hangingindent",
+            "Ciomek, K. (2017), hasseDiagram: Drawing Hasse diagram. (v. 0.1.3)
+            [R Package] Available from https://CRAN.R-project.org/package=hasseDiagram"
+          ),
+          p(
+            class = "hangingindent",
+            "Lohr, S. L. (1995), 'Hasse Diagrams in Statistical Consulting and
+            Teaching.'", tags$em("The American Statistician"), " 49, 376-381."
+          ),
+          p(
+            class = "hangingindent",
+            "Neudecker, A. (2020), shinyMatrix: Shiny matrix input field. (v. 0.4.0)
+            [R Package] Available from https://CRAN.R-project.org/package=shinyMatrix"
+          ),
+          p(
+            class = "hangingindent",
+            "Oehlert, G. W. (2010), ", tags$em("A First Course in Design and
+            Analysis of Experiments."), " Creative Commons: BY-NC-ND 3.0."
+          ),
+          p(
+            class = "hangingindent",
+            "Perrier, V., Meyer, F., Granjon, D. (2020), shinyWidgets: Custom
+            inputs widgets for shiny. (v. 0.5.4) [R Package] Available from
+            https://CRAN.R-project.org/package=shinyWidgets"
+          ),
+          p(
+            class = "hangingindent",
+            "Wickham, H. (2019), stringr: Simple, consistent wrappers for common
+            string operations. (v. 1.4.0) [R package] Availabe from
+            https://CRAN.R-project.org/package=stringr"
+          )
         )
       )
     )
@@ -1265,6 +1381,90 @@ hasseDiagram::hasse(
         )
       }
     }
+  )
+
+  observeEvent(
+    eventExpr = input$updateLabels,
+    handlerExpr = {
+      mat <- input$advEdit
+      dimnames(mat)[[2]] <- dimnames(mat)[[1]]
+      updateMatrixInput(
+        session = session,
+        inputId = "advEdit",
+        value = mat
+      )
+    },
+    ignoreNULL = TRUE,
+    ignoreInit = TRUE
+  )
+
+  observeEvent(
+    eventExpr = input$addRowCol,
+    handlerExpr = {
+      mat <- rbind(input$advEdit, rep(FALSE, ncol(input$advEdit)))
+      mat <- cbind(mat, rep(FALSE, nrow(mat)))
+      dimnames(mat) <- list(c(dimnames(input$advEdit)[[1]],
+                              "new term"), c(dimnames(input$advEdit)[[2]], "new term"))
+      updateMatrixInput(
+        session = session,
+        inputId = "advEdit",
+        value = mat
+      )
+    },
+    ignoreNULL = TRUE,
+    ignoreInit = TRUE
+  )
+
+  observeEvent(
+    eventExpr = input$removeRowCol,
+    handlerExpr = {
+      mat <- input$advEdit[-nrow(input$advEdit), -ncol(input$advEdit)]
+      updateMatrixInput(
+        session = session,
+        inputId = "advEdit",
+        value = mat
+      )
+    },
+    ignoreNULL = TRUE,
+    ignoreInit = TRUE
+  )
+
+  observeEvent(
+    eventExpr = input$updateDiagram,
+    handlerExpr = {
+      mat <- as.matrix(input$advEdit)
+      mat <- apply(X = mat, MARGIN = c(1, 2), FUN = as.logical)
+      output$newHasseDiagram <- renderPlot(
+        expr = {
+          hasseDiagram::hasse(
+            data = mat
+          )
+        }
+      )
+
+      output$newRCode <- renderText({
+        labs <- paste0('"', dimnames(input$advEdit)[[1]], '"', collapse = ", ")
+        mat <- paste0(
+          unname(obj = mat, force = TRUE),
+          collapse = ", "
+        )
+        paste0(
+          'modelLabels <- c(', labs, ')
+modelMatrix <- matrix(
+  data = c(', mat, '),
+  nrow = ', length(dimnames(input$advEdit)[[1]]), ',
+  ncol = ', length(dimnames(input$advEdit)[[1]]), '
+  byrow = FALSE
+)
+hasseDiagram::hasse(
+ data = modelMatrix,
+ labels = modelLabels
+)'
+        )
+      })
+    },
+    ignoreNULL = TRUE,
+    ignoreInit = TRUE
   )
 
 }
