@@ -972,7 +972,6 @@ server <- function(input, output, session) {
                             onLabel = "Random",
                             offLabel = "Fixed",
                             value = FALSE,
-                            width = "auto",
                             size = "normal"
                           )
                         )
@@ -1020,7 +1019,6 @@ server <- function(input, output, session) {
                           onLabel = "Random",
                           offLabel = "Fixed",
                           value = FALSE,
-                          width = "auto",
                           size = "normal"
                         )
                       )
