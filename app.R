@@ -1506,6 +1506,18 @@ hasseDiagram::hasse(
     ignoreInit = TRUE
   )
 
+### Go back to Page 3 ----
+observeEvent(
+  eventExpr = input$back4,
+  handlerExpr = {
+    updateTabsetPanel(
+      session = session,
+      inputId = "builder",
+      selected = "fourth"
+    )
+  }
+)
+
 }
 
 # Boast App Call ----
