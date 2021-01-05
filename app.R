@@ -1,4 +1,4 @@
-# Load Packages
+# Load Packages ----
 library(shiny)
 library(shinyBS)
 library(shinydashboard)
@@ -8,144 +8,9 @@ library(hasseDiagram)
 library(shinyMatrix)
 library(stringr)
 
-# Load additional dependencies and setup functions
-linkSurvey <- function(repoName){
-  link <- paste0(
-    "https://pennstate.qualtrics.com/jfe/form/SV_7TLIkFtJEJ7fEPz?appName=",
-    repoName
-  )
-  return(link)
-}
-
-resetInputs <- function(session, textList = NULL, numberList = NULL,
-                        switchList = NULL, checkList = NULL){
-  if (!is.null(textList)) {
-    for (i in 1:length(textList)) {
-      updateTextInput(
-        session = session,
-        inputId = textList[i],
-        value = ""
-      )
-    }
-  }
-
-  if (!is.null(numberList)) {
-    for (i in 1:length(numberList)) {
-      updateNumericInput(
-        session = session,
-        inputId = numberList[i],
-        value = 2
-      )
-    }
-  }
-
-  if (!is.null(switchList)) {
-    for (i in 1:length(switchList)) {
-      updateSwitchInput(
-        session = session,
-        inputId = switchList[i],
-        value = FALSE
-      )
-    }
-  }
-
-  if (!is.null(checkList)) {
-    for (i in 1:length(checkList)) {
-      updateCheckboxInput(
-        session = session,
-        inputId = checkList[i],
-        value = FALSE
-      )
-    }
-  }
-}
-
-getInputNames <- function(pattern, input = input){
-  temp1 <- grep(
-    pattern = pattern,
-    x = names(input),
-    value = TRUE
-  )
-  return(sort(temp1))
-}
-
-reduceDF <- function(dataFrame){
-  temp1 <- dataFrame
-  temp2 <- sapply(X = dataFrame$labels, FUN = grepl, pattern = "\\(")
-  for (i in 1:length(temp2)) {
-    if (temp2[i]) {
-      temp1$labels[i] <- gsub(
-        pattern = "\\({1,}",
-        replacement = "",
-        x = temp1$labels[i]
-      )
-      temp1$labels[i] <- gsub(
-        pattern = "\\){1,}",
-        replacement = "",
-        x = temp1$labels[i]
-      )
-    }
-  }
-  for (i in 1:(nrow(temp1) - 1)) {
-    elements <- unlist(strsplit(x = temp1$labels[i], split = " X ", fixed = TRUE))
-    for (j in (i + 1):(nrow(temp1))) {
-      if (all(stringr::str_detect(string = temp1$labels[j], pattern = elements))) {
-        temp1$df[j] <- temp1$df[j] - temp1$df[i]
-      }
-    }
-  }
-  temp1$labels <- dataFrame$labels
-  return(temp1)
-}
-
-makeDiagMatrix <- function(labelList, block = NULL, covariates = NULL){
-  if (length(block) == 0) {block <- NULL}
-  if (length(covariates) == 0) {covariates <- NULL}
-  orderMat <- matrix(
-    data = FALSE,
-    nrow = length(labelList),
-    ncol = length(labelList),
-    dimnames = list(labelList, labelList)
-  )
-  temp1 <- labelList
-  temp2 <- sapply(X = temp1, FUN = grepl, pattern = "\\(")
-  for (i in 1:length(temp2)) {
-    if (temp2[i]) {
-      temp1[i] <- gsub(
-        pattern = "\\({1,}",
-        replacement = "",
-        x = temp1[i]
-      )
-      temp1[i] <- gsub(
-        pattern = "\\){1,}",
-        replacement = "",
-        x = temp1[i]
-      )
-    }
-  }
-  for (i in 1:length(labelList)) {
-    if (grepl(pattern = "\\(Error\\)", x = labelList[i])) {
-      next
-    } else {
-      elements <- unlist(strsplit(x = temp1[i], split = " X ", fixed = TRUE))
-      for (j in (i + 1):length(labelList)) {
-        if (grepl(pattern = "Grand Mean", x = temp1[i], fixed = TRUE)) {
-          orderMat[labelList[i], labelList[j]] <- TRUE
-        } else if (
-          all(
-            any(labelList[j] != block, is.null(block), is.na(block)),
-            any(!(labelList[j] %in% covariates), is.null(covariates), is.na(covariates)),
-            all(stringr::str_detect(string = temp1[j], pattern = elements))
-          )) {
-          orderMat[labelList[i], labelList[j]] <- TRUE
-        } else if (grepl(pattern = "\\(Error\\)", x = labelList[j])) {
-          orderMat[labelList[i], labelList[j]] <- TRUE
-        }
-      }
-    }
-  }
-  return(orderMat)
-}
+# Define global constants and functions, load data ----
+## Helper functions are located in the following file
+source(file = "helperFunctions.R", local = TRUE)
 
 mePlaceholder <- "E.g., dosage, sex, age group"
 blockPlaceholder <- "E.g., field"
@@ -155,6 +20,9 @@ grandMeanRow <- data.frame(
   labels = "Grand Mean",
   df = 1
 )
+
+## Nesting switch
+nest <- FALSE
 
 # Define UI for App ----
 ui <- list(
@@ -233,7 +101,7 @@ ui <- list(
             br(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 1/4/2021 by NJH.")
+            div(class = "updated", "Last Update: 1/5/2021 by NJH.")
           )
         ),
         #### Explore Page ----
@@ -940,7 +808,6 @@ server <- function(input, output, session) {
           )
         )
 
-
         #### Set up second tab ----
         output$mainList <- renderUI(
           expr = {
@@ -965,16 +832,30 @@ server <- function(input, output, session) {
                         ),
                         column(
                           offset = 0,
-                          width = 8,
-                          switchInput(
+                          width = 3,
+                          radioButtons(
                             inputId = paste0("me", i, "Random"),
-                            label = "Fixed or random effect",
-                            onLabel = "Random",
-                            offLabel = "Fixed",
-                            value = FALSE,
-                            size = "normal"
+                            label = "Type of effect",
+                            choices = c("Fixed", "Random"),
+                            selected = "Fixed",
+                            inline = TRUE
                           )
-                        )
+                        ),
+                        if (nest) {
+                          column(
+                            offset = 0,
+                            width = 5,
+                            selectInput(
+                              inputId = paste0("me", i, "NestedIn"),
+                              label = "Effect is nested in",
+                              choices = c(
+                                "Not nested",
+                                labels$mainEffects[-i]
+                              ),
+                              selected = "Not nested"
+                            )
+                          )
+                        }
                       )
                     )
                   }
@@ -1013,13 +894,12 @@ server <- function(input, output, session) {
                       column(
                         offset = 0,
                         width = 8,
-                        switchInput(
+                        radioButtons(
                           inputId = "blockRandom",
-                          label = "Fixed or random effect",
-                          onLabel = "Random",
-                          offLabel = "Fixed",
-                          value = FALSE,
-                          size = "normal"
+                          label = "Type of effect",
+                          choices = c("Fixed", "Random"),
+                          selected = "Fixed",
+                          inline = TRUE
                         )
                       )
                     )
@@ -1060,8 +940,8 @@ server <- function(input, output, session) {
           getInputNames(pattern = "^me[[:digit:]]{0,}Levels$", input = input),
           "totalSize"
         ),
-        switchList = getInputNames(pattern = "Random$", input = input),
-        checkList = NULL
+        radioList = getInputNames(pattern = "Random$", input = input),
+        selectList = getInputNames(pattern = "NestedIn$", input = input)
       )
     }
   )
@@ -1077,8 +957,8 @@ server <- function(input, output, session) {
           getInputNames(pattern = "^me[[:digit:]]{0,}Levels$", input = input),
           "totalSize"
         ),
-        switchList = getInputNames(pattern = "Random$", input = input),
-        checkList = NULL
+        radioList = getInputNames(pattern = "Random$", input = input),
+        selectList = getInputNames(pattern = "NestedIn$", input = input)
       )
     },
     ignoreNULL = TRUE,
@@ -1102,13 +982,13 @@ server <- function(input, output, session) {
         #### Apply Random to Main Effects ----
         temp1 <- getInputNames(pattern = "^me[[:digit:]]{0,}Random$", input = input)
         for (i in 1:length(temp1)) {
-          if (input[[temp1[i]]]) {
+          if (input[[temp1[i]]] == "Random") {
             labels$mainEffects[i] <- paste0("(", labels$mainEffects[i], ")")
           }
         }
 
         #### Apply Random to Block ----
-        if (!is.null(input$blockRandom) && input$blockRandom) {
+        if (!is.null(input$blockRandom) && input$blockRandom == "Random") {
           labels$block <- paste0("(", labels$block, ")")
         }
 
@@ -1129,7 +1009,7 @@ server <- function(input, output, session) {
                 m = i,
                 simplify = TRUE,
                 FUN = paste,
-                collapse = " X "
+                collapse = " \U00D7 "
               )
             )
           }
@@ -1164,6 +1044,24 @@ server <- function(input, output, session) {
           }
           labels$intLevels <- lapply(temp3, function(x) x[!is.na(x)])
           labels$intLevels <- unlist(labels$intLevels)
+
+          #### Handle Nesting ----
+          if (nest) {
+            nesting <- getInputNames(pattern = "NestedIn$", input = input)
+            nesting <- sapply(
+              X = nesting,
+              FUN = function(x){
+                if (input[[x]] == "Not nested") {
+                  return(NA)
+                } else {
+                  input[[x]]
+                }
+              },
+              USE.NAMES = FALSE
+            )
+            print(nesting)
+          }
+
 
           #### Create the interaction level matrix and display ----
           interactionMatrix <- matrix(
@@ -1317,7 +1215,7 @@ server <- function(input, output, session) {
   output$hasseDiagram <- renderPlot(
     expr = {
       hasseDiagram::hasse(
-        data = makeDiagMatrix(
+        data = makeOrderMatrix(
           labelList = finalLabelFrame()$labels,
           block = labels$block,
           covariates = labels$covariates
@@ -1330,7 +1228,7 @@ server <- function(input, output, session) {
   output$rCode <- renderText({
     labs <- paste0('"', labels$matrixLabels, '"', collapse = ", ")
     mat <- paste0(unname(
-            obj = makeDiagMatrix(
+            obj = makeOrderMatrix(
               labelList = finalLabelFrame()$labels,
               block = labels$block,
               covariates = labels$covariates
@@ -1382,8 +1280,8 @@ hasseDiagram::hasse(
           getInputNames(pattern = "Levels$", input = input),
           "totalSize"
         ),
-        switchList = getInputNames(pattern = "Random$", input = input),
-        checkList = NULL
+        radioList = getInputNames(pattern = "Random$", input = input),
+        selectList = getInputNames(pattern = "NestedIn$", input = input)
       )
     },
     ignoreNULL = TRUE,
@@ -1407,7 +1305,7 @@ hasseDiagram::hasse(
     eventExpr = input$builder,
     handlerExpr = {
       if (input$builder == "fifth") {
-        orderMat <- makeDiagMatrix(
+        orderMat <- makeOrderMatrix(
           labelList = finalLabelFrame()$labels,
           block = labels$block,
           covariates = labels$covariates
