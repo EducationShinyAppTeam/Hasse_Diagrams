@@ -49,7 +49,6 @@ ui <- list(
         id = "pages",
         menuItem("Overview", tabName = "overview", icon = icon("dashboard")),
         menuItem("Explore", tabName = "explore", icon = icon("wpexplorer")),
-        menuItem("Build", tabName = "build", icon = icon("gears")),
         menuItem("Diagram Wizard", tabName = "wizard", icon = icon("hat-wizard")),
         menuItem("References", tabName = "references", icon = icon("leanpub"))
       ),
@@ -66,7 +65,7 @@ ui <- list(
           tabName = "overview",
           withMathJax(),
           h1("Hasse Diagrams"),
-          p("This apps will help you explore Hasse diagrams as well as help you
+          p("This app will help you explore Hasse diagrams as well as help you
             build your own."),
           h2("Instructions"),
           p("There are two major parts of this app:"),
@@ -77,7 +76,7 @@ ui <- list(
               and how to read them."
             ),
             tags$li(
-              tags$strong("Build a Diagram: "),
+              tags$strong("Diagram Wizard: "),
               "where you can use this app to help you build a Hasse diagram.
               You'll be able to save the picture to place in another file as well
               as copy the R code that would create the diagram."
@@ -102,7 +101,7 @@ ui <- list(
             br(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 2/10/2021 by NJH.")
+            div(class = "updated", "Last Update: 2/14/2021 by NJH.")
           )
         ),
         #### Explore Page ----
@@ -115,7 +114,7 @@ ui <- list(
             serve as a way to visualize the model for an experiment or observational
             study. In Analysis of Variance/Design of Experiments settings, a
             Hasse diagram allows the statistician to display relationships between
-            factors in the study without having to resort of algebraic notation.
+            factors in the study without having to resort to algebraic notation.
             Each node in the Hasse diagram corresponds to a term in the algebraic
             model as well as a screen that you pass data through."
           ),
@@ -143,19 +142,23 @@ ui <- list(
               })"
             )),
             p(
-              "All Hasse diagrams have two common nodes: the Grand Mean term at the
-            top of the diagram and an Error term at the bottom. Hasse diagrams
-            are linked to the Factor Effects model of ANOVA rather than the Cell
-            Means model. All other nodes depend upon the model you're building.
-            In our example, we have one factor--the drug dosage each person gets.
-            Since this is a main effect, this node goes in-between the Grand Mean
-            and the Error."
+              "All Hasse diagrams have two common nodes: the Action (topmost)
+              and the Measurement Units (bottom-most) nodes. The Action node is
+              where you would place the action which directly lead to the generation
+              of the response. Many times, we replace the action with the phase
+              'Grand Mean'. The Measurement Unit node is where we place the name
+              for the objects/living beings we're getting values of the response
+              from. In generic Hasse diagrams and as a default, we use the phrase
+              'Error'. Hasse diagrams are linked to the Factor Effects model of
+              ANOVA rather than the Cell Means model. All other nodes depend upon
+              the model you're building. In our example, we have one factor--the
+              drug dosage each person gets. Since this is a main effect, this
+              node goes in-between the Grand Mean (the Action node) and the
+              Error (the Measurement Unit node)."
             ),
             p(
-              "You'll notice that there are numbers of either side of each term.",
-              br(),
-              br(),
-              "To the left, the number represents the number of levels for that term.
+              "You'll notice that there are numbers of either side of each term.
+              To the left, the number represents the number of levels for that term.
               There will always be just 1 Grand Mean value for any model. In our
               example, we have four different dosages, thus there are four levels
               to the dosage factor. The number of levels for the Error term is the
@@ -250,377 +253,6 @@ ui <- list(
             )
           )
         ),
-        #### Build a Diagram Page ----
-        tabItem(
-          tabName = "build",
-          withMathJax(),
-          h2("Build a Hasse Diagram"),
-          p("Use the following interface to help build your own Hasse diagram."),
-          br(),
-          tabsetPanel(
-            id = "builder",
-            type = "hidden",
-            ##### First Entry Tab ----
-            tabPanel(
-              title = "first",
-              br(),
-              h3("Factors, Blocks, and Covariates"),
-              textInput(
-                inputId = "mainEffects",
-                label = "Enter your main effect(s); use a comma to separate terms.",
-                placeholder = mePlaceholder,
-                width = "75%"
-              ),
-              br(),
-              textInput(
-                inputId = "block",
-                label = "Enter what you're using as a block; leave empty for no
-                  block (limit one).",
-                placeholder = blockPlaceholder,
-                width = "75%"
-              ),
-              br(),
-              textInput(
-                inputId = "covariates",
-                label = "Enter your covariate(s); use a comma to separate
-                  covariates and empty for none.",
-                placeholder = covarPlaceholder,
-                width = "75%"
-              ),
-              br(),
-              fluidRow(
-                column(
-                  width = 2,
-                  bsButton(
-                    inputId = "reset1",
-                    label = "Reset",
-                    size = "large",
-                    style = "warning"
-                  )
-                ),
-                column(
-                  offset = 8,
-                  width = 2,
-                  div(
-                    style = "text-align: right;",
-                    bsButton(
-                      inputId = "next1",
-                      label = "Next",
-                      icon = icon("forward"),
-                      size = "large"
-                    )
-                  )
-                )
-              )
-            ),
-            ##### Second Entry Tab ----
-            tabPanel(
-              title = "second",
-              br(),
-              h3("Adjust Main Effects (Levels, Fixed/Random Effect), Blocks,
-                 and Total Sample Size"),
-              br(),
-              h4("Main Effects"),
-              uiOutput("mainList"),
-              h4("Block"),
-              uiOutput("blockList"),
-              h4("Sample Size"),
-              numericInput(
-                inputId = "totalSize",
-                label = "Total sample size",
-                value = "",
-                min = 1,
-                step = 1
-              ),
-              br(),
-              fluidRow(
-                column(
-                  width = 2,
-                  bsButton(
-                    inputId = "back1",
-                    label = "Back",
-                    icon = icon("backward"),
-                    size = "large"
-                  )
-                ),
-                column(
-                  offset = 3,
-                  width = 2,
-                  div(
-                    style = "text-align: center;",
-                    bsButton(
-                      inputId = "reset2",
-                      label = "Reset page",
-                      icon = icon("eraser"),
-                      size = "large",
-                      style = "warning"
-                    )
-                  )
-                ),
-                column(
-                  offset = 3,
-                  width = 2,
-                  div(
-                    style = "text-align: right;",
-                    bsButton(
-                      inputId = "next2",
-                      label = "Next",
-                      icon = icon("forward"),
-                      size = "large"
-                    )
-                  )
-                )
-              )
-            ),
-            ##### Third Entry Tab ----
-            tabPanel(
-              title = "third",
-              br(),
-              h3("Adjust Interactions"),
-              p(
-                "All possible interactions of your main effects appear below with
-                the appropriate fixed/random effect already applied. Please verify
-                the number of levels for each one."
-              ),
-              p(
-                tags$strong("To delete an interaction, enter 0 for the number of
-                            levels.")
-              ),
-              matrixInput(
-                inputId = "interactionLevels",
-                label = "Interaction Levels",
-                value = matrix("", 1, 1),
-                rows = list(names = TRUE),
-                cols = list(names = FALSE),
-                class = "numeric"
-              ),
-              p(tags$em("Note: "), "Be sure to click outside of the input boxes
-                before you press the Next button to ensure that your entry is
-                recorded."),
-              br(),
-              fluidRow(
-                column(
-                  width = 2,
-                  bsButton(
-                    inputId = "back2",
-                    label = "Back",
-                    icon = icon("backward"),
-                    size = "large"
-                  )
-                ),
-                column(
-                  offset = 3,
-                  width = 2,
-                  div(
-                    style = "text-align: center;",
-                    bsButton(
-                      inputId = "reset3",
-                      label = "Reset page",
-                      icon = icon("eraser"),
-                      size = "large",
-                      style = "warning"
-                    )
-                  )
-                ),
-                column(
-                  offset = 3,
-                  width = 2,
-                  div(
-                    style = "text-align: right;",
-                    bsButton(
-                      inputId = "next3",
-                      label = "Next",
-                      icon = icon("forward"),
-                      size = "large"
-                    )
-                  )
-                )
-              )
-            ),
-            ##### Output Tab ----
-            tabPanel(
-              title = "fourth",
-              br(),
-              h3("Your Hasse Diagram"),
-              p(
-                "Look through the following diagram to ensure that all of the
-                appropriate elements are in their correct places. If not, please
-                go back and make the appropriate edits."
-              ),
-              div(
-                style = "text-align: center;",
-                plotOutput("hasseDiagram")
-              ),
-              tags$script(HTML(
-                "$(document).ready(function() {
-              document.getElementById('hasseDiagram').setAttribute('aria-label',
-              `Your Hasse diagram`)
-              })"
-              )),
-              p(
-                "To copy/paste your diagram, right-click (secondary click) on
-                the diagram and select 'Copy Image'. Then in your word processing
-                program (e.g., Word, Docs), press the Paste key. You may also save
-                the image to a file by choosing the 'Save Image as...' option
-                insted of 'Copy Image'."
-              ),
-              h3("Generating Code"),
-              p(
-                "If you are using R Markdown (or R), you can copy the following
-                code to paste into a code chunk or your console to create your
-                Hasse diagram.",
-                br(),
-                verbatimTextOutput("rCode"),
-                br(),
-                tags$em("Note: "),
-                "you'll need to first have the appropriate packages installed as
-                well as loaded in your current R session."
-              ),
-              br(),
-              fluidRow(
-                column(
-                  width = 2,
-                  bsButton(
-                    inputId = "back3",
-                    label = "Back",
-                    icon = icon("backward"),
-                    size = "large"
-                  )
-                ),
-                column(
-                  offset = 3,
-                  width = 2,
-                  div(
-                    style = "text-align: center;",
-                    bsButton(
-                      inputId = "reset4",
-                      label = "Start over",
-                      icon = icon("exclamation-triangle"),
-                      size = "large",
-                      style = "danger"
-                    )
-                  )
-                ),
-                column(
-                  offset = 2,
-                  width = 3,
-                  div(
-                    style = "text-align: right;",
-                    bsButton(
-                      inputId = "next4",
-                      label = "Advanced edit",
-                      icon = icon("user-edit"),
-                      size = "large"
-                    )
-                  )
-                )
-              )
-            ),
-            ##### Advanced Edit Tab ----
-            tabPanel(
-              title = "fifth",
-              br(),
-              h3("Advanced Editing"),
-              p(
-                "If something looks off with your diagram, you may edit it here.
-                You may edit the labels and the organization matrix. Use the
-                buttons to add/remove rows as needed."
-              ),
-              p(
-                "If you are unsure about how to use this page, please return to
-                the prior pages and work through the diagram wizard."
-              ),
-              matrixInput(
-                inputId = "advEdit",
-                label = "Hasse Diagram Matrix",
-                value = matrix("", 1, 1),
-                class = "character",
-                rows = list(names = TRUE, editableNames = TRUE),
-                cols = list(names = TRUE)
-              ),
-              fluidRow(
-                column(
-                  width = 4,
-                  bsButton(
-                    inputId = "updateLabels",
-                    label = "Update row/column labels",
-                    size = "large"
-                  )
-                ),
-                column(
-                  width = 3,
-                  bsButton(
-                    inputId = "addRowCol",
-                    label = "Add row/column",
-                    size = "large",
-                    style = "warning"
-                  )
-                ),
-                column(
-                  width = 3,
-                  bsButton(
-                    inputId = "removeRowCol",
-                    label = "Remove row/column",
-                    size = "large",
-                    style = "danger"
-                  )
-                ),
-                column(
-                  width = 2,
-                  bsButton(
-                    inputId = "updateDiagram",
-                    label = "Update diagram",
-                    size = "large",
-                    style = "default"
-                  )
-                )
-              ),
-              h3("Updated Diagram"),
-              div(
-                style = "text-align: center;",
-                plotOutput("newHasseDiagram")
-              ),
-              tags$script(HTML(
-                "$(document).ready(function() {
-              document.getElementById('newHasseDiagram').setAttribute('aria-label',
-              `Your updated Hasse diagram`)
-              })"
-              )),
-              h3("Updated Generating Code"),
-              p(
-                "If you are using R Markdown (or R), you can copy the following
-                code to paste into a code chunk or your console to create your
-                Hasse diagram.",
-                br(),
-                verbatimTextOutput("newRCode"),
-              ),
-              fluidRow(
-                column(
-                  width = 6,
-                  bsButton(
-                    inputId = "back4",
-                    label = "Back (no changes)",
-                    icon = icon("backward"),
-                    size = "large"
-                  )
-                ),
-                column(
-                  width = 6,
-                  div(
-                    style = "text-align: right;",
-                    bsButton(
-                      inputId = "reset5",
-                      label = "Start Over",
-                      icon = icon("exclamation-triangle"),
-                      size = "large",
-                      style = "danger"
-                    )
-                  )
-                )
-              )
-            )
-          )
-        ),
         #### Set up the Diagram Wizard Page ----
         tabItem(
           tabName = "wizard",
@@ -629,7 +261,7 @@ ui <- list(
           p("Follow the prompts to create a Hasse Diagram."),
           tabsetPanel(
             id = "diagramWiz",
-            type = "tabs",
+            type = "hidden",
             ##### Step 1-Action and Measurement Units ----
             tabPanel(
               title = "First Step",
@@ -697,6 +329,7 @@ ui <- list(
               p(tags$em("Note: "), "Parentheses will be added/removed from your measurement unit
                 name automatically based upon your selection for Fixed or Random
                 Effect."),
+              hr(),
               fluidRow(
                 column(
                   width = 2,
@@ -760,6 +393,7 @@ ui <- list(
                 placeholder = covarPlaceholder,
                 width = "75%"
               ),
+              hr(),
               fluidRow(
                 column(
                   width = 2,
@@ -813,6 +447,7 @@ ui <- list(
               uiOutput("wizMainList"),
               h4("Block"),
               uiOutput("wizBlockList"),
+              hr(),
               fluidRow(
                 column(
                   width = 2,
@@ -881,7 +516,8 @@ ui <- list(
               p("Based upon your prior inputs, we've generated the higher order
                 terms, both crossing and nesting. We've additionally estimated
                 initial number of levels for each term. Please review these terms
-                and adjust the number of levels as necessary."),
+                and adjust the number of levels as necessary. (You may safely
+                ignore the rank column.)"),
               p(strong("To delete a term, enter 0 for the number of levels.")),
               fluidRow(
                 column(
@@ -894,27 +530,37 @@ ui <- list(
                     cols = list(names = TRUE),
                     class = "numeric"
                   ),
-                  p(tags$em("Note: "), "Be sure to click outside of the input boxes
-                before you press the Next button to ensure that your entry is
-                recorded."),
+                  p(tags$em("Note: "), "Be sure to click outside of the input
+                    boxes before you click any other buttons to ensure that your
+                    entry is properly recorded."),
                 ),
                 column(
-                  width = 4,
-                  offset = 1,
+                  width = 5,
+                  offset = 0,
+                  h4("Tracking Degrees of Freedom"),
+                  p(
+                    "Tracking Degrees of Freedom (i.e., 'YES') will show you the
+                    total number of degrees of freedom, how many you've used, and
+                    how many are remaining for your model up to the higher order
+                    terms. This will update and run error checks when you press
+                    'Save values'. 'NO' will hide the table, suppress error checks,
+                    and omit degrees of freedom in the diagram."
+                  ),
                   switchInput(
                     inputId = "wizTrackDF",
-                    label = "Track Degrees of Freedom?",
+                    label = "Track DF?",
                     value = TRUE,
                     onLabel = "YES",
                     offLabel = "NO",
                     onStatus = "success",
                     offStatus = "danger",
-                    size = "large"
+                    size = "large",
+                    width = "200%"
                   ),
-                  p("Degrees of Freedom Tally"),
                   DT::dataTableOutput("wizDFTracker")
                 )
               ),
+              hr(),
               fluidRow(
                 column(
                   width = 2,
@@ -1067,9 +713,10 @@ ui <- list(
           ),
           p(
             class = "hangingindent",
-            "Chang, W., Cheng, J., Allaire, J. J., Xie, Y., McPherson, J. (2020),
-            shiny: Web application framework for R. (v. 1.5.0) [R package] Available
-            from https://CRAN.R-project.org/package=shiny"
+            "Chang, W., Cheng, J., Allaire, J. J., Sivert, C., Schloerke, Xie, Y.,
+            Allen, J., McPherson, J., Dipert, A., and Borges, B. (2021),
+            shiny: Web application framework for R. (v. 1.6.0) [R package]
+            Available from https://CRAN.R-project.org/package=shiny"
           ),
           p(
             class = "hangingindent",
@@ -1083,6 +730,12 @@ ui <- list(
           ),
           p(
             class = "hangingindent",
+            "Müller, K., and Wickham, H. (2021). tibble: Simple data frames.
+            (v. 3.0.6) [R package] Availlable from
+            https://CRAN.R-project.org/package=tibble"
+          ),
+          p(
+            class = "hangingindent",
             "Neudecker, A. (2020), shinyMatrix: Shiny matrix input field. (v. 0.4.0)
             [R Package] Available from https://CRAN.R-project.org/package=shinyMatrix"
           ),
@@ -1093,8 +746,8 @@ ui <- list(
           ),
           p(
             class = "hangingindent",
-            "Perrier, V., Meyer, F., Granjon, D. (2020), shinyWidgets: Custom
-            inputs widgets for shiny. (v. 0.5.4) [R Package] Available from
+            "Perrier, V., Meyer, F., Granjon, D. (2021), shinyWidgets: Custom
+            inputs widgets for shiny. (v. 0.5.7) [R Package] Available from
             https://CRAN.R-project.org/package=shinyWidgets"
           ),
           p(
@@ -1105,10 +758,20 @@ ui <- list(
           ),
           p(
             class = "hangingindent",
+            "Wickham, H., François, R., Henry, L., and Müller, K. (2021). dplyr:
+            A grammar of data manipulation. (v. 1.0.4) [R package] Available from
+            https://CRAN.R-project.org/package=dplyr"
+          ),
+          p(
+            class = "hangingindent",
             "Xie, Y., Cheng, J., Tan, X. (2021), DT: A Wrapper of the JavaScript
             Library 'DataTables' (v. 0.17) [R package] Availabe from
             https://CRAN.R-project.org/package=DT"
-          )
+          ),
+          br(),
+          br(),
+          br(),
+          boastUtils::copyrightInfo()
         )
       )
     )
@@ -1118,7 +781,6 @@ ui <- list(
 # Define server logic ----
 server <- function(input, output, session) {
   ## Info Button ----
-  ## UPDATE POST WIZARD COMPLETION
   observeEvent(
     eventExpr = input$info,
     handlerExpr = {
@@ -1127,19 +789,18 @@ server <- function(input, output, session) {
         type = "info",
         title = "Information",
         text = tags$div(
-          "Build your own Hasse Diagram on the Build page.",
+          "Use the app in two ways:",
           tags$ol(
             tags$li(
-              "Enter all of the main effects, as well as a block and covariates
-              in the appropriate blanks. Leave blank to omit and use commas to
-              separate distinct terms. Press 'Next' when finished."
+              "Click on the ", tags$strong("Explore"), " page to explore how to
+              read Hasse Diagrams and how to use them to figure out the proper
+              denominator to use to test a give node/term."
             ),
             tags$li(
-              "Enter in the number of levels for each term and whether or not a
-              term should be treated as a fixed or random effect. All possible
-              interactions are listed be default; check the delete box to remove
-              unneeded interactions. Enter the total sample size for the study.
-              Press 'Next' when finished."
+              "Click on the ", tags$strong("Diagram Wizard"), " page to use the
+              app to build your own Hasse diagram. The wizard will walk you through
+              the necessary steps and then produce a diagram you can save as well
+              as the R code to re-create the diagram."
             )
           )
         ),
@@ -1149,8 +810,6 @@ server <- function(input, output, session) {
   )
 
   ## Set up Reactive Values ----
-  labels <- reactiveValues() # Old
-  finalLabelFrame <- reactiveVal(grandMeanRow) # Old
   wizLabels <- reactiveValues()
   dfTable <- reactiveValues()
 
@@ -1196,7 +855,6 @@ server <- function(input, output, session) {
   )
 
   ## Diagram Wizard ----
-
   ### Actions From Step 1 (wizFS2) ----
   #### Create Base Node Table ----
   baseDF <- eventReactive(
@@ -2035,7 +1693,8 @@ server <- function(input, output, session) {
             data = hasseList$matrix,
             labels = hasseList$labels
           )
-        }
+        },
+        alt = "Your Hasse diagram"
       )
 
       #### Build Code
@@ -2299,691 +1958,7 @@ hasseDiagram::hasse(
     }
   )
 
-
-  ## OLD BUILDER CODE ----
-  ## Builder Page 1 ----
-  ### Reset Page 1 button ----
-  observeEvent(
-    eventExpr = input$reset1,
-    handlerExpr = {
-      resetInputs(
-        session = session,
-        textList = c("mainEffects", "block", "covariates")
-      )
-    },
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-  ### Move to Page 2 button ----
-  observeEvent(
-    eventExpr = input$next1,
-    handlerExpr = {
-      #### Check for Main effects
-      if (is.null(input$mainEffects) || input$mainEffects == "") {
-        sendSweetAlert(
-          session = session,
-          title = "Main Effect Error",
-          type = "error",
-          text = "You must enter at least one main effect."
-        )
-      } else {
-        #### Get and split labels ----
-        labels$mainEffects <- unlist(
-          strsplit(
-            x = input$mainEffects,
-            split = "[\\,\\;]\\s{0,1}"
-          )
-        )
-        labels$block <- unlist(
-          strsplit(
-            x = input$block,
-            split = "[\\,\\;]\\s{0,1}"
-          )
-        )
-        labels$covariates <- unlist(
-          strsplit(
-            x = input$covariates,
-            split = "[\\,\\;]\\s{0,1}"
-          )
-        )
-
-        #### Set up second tab ----
-        output$mainList <- renderUI(
-          expr = {
-            tagList(
-              tags$ul(
-                lapply(
-                  X = 1:length(labels$mainEffects),
-                  FUN = function(i) {
-                    tags$li(
-                      tags$strong(labels$mainEffects[i]),
-                      fluidRow(
-                        column(
-                          offset = 0,
-                          width = 4,
-                          numericInput(
-                            inputId = paste0("me", i, "Levels"),
-                            label = "Number of levels",
-                            value = 3,
-                            min = 2,
-                            step = 1
-                          ),
-                        ),
-                        column(
-                          offset = 0,
-                          width = 3,
-                          radioButtons(
-                            inputId = paste0("me", i, "Random"),
-                            label = "Type of effect",
-                            choices = c("Fixed", "Random"),
-                            selected = "Fixed",
-                            inline = TRUE
-                          )
-                        ),
-                        column(
-                          offset = 0,
-                          width = 5,
-                          selectInput(
-                            inputId = paste0("me", i, "NestedIn"),
-                            label = "Effect is nested in",
-                            choices = c(
-                              "Not nested",
-                              labels$mainEffects[-i]
-                            ),
-                            selected = "Not nested"
-                          )
-                        )
-                      )
-                    )
-                  }
-                )
-              )
-            )
-          }
-        )
-
-        output$blockList <- renderUI(
-          expr = {
-            tagList(
-              if (length(labels$block) < 1 || is.null(length(labels$block))) {
-                p(
-                  "You've not indicated that there is a block in this model."
-                )
-              } else if (length(labels$block) >= 2 ) {
-                p("This version of the app only supports one block. Please go back
-                to the previous page and adjust your block entry.")
-              } else {
-                tags$ul(
-                  tags$li(
-                    tags$strong(labels$block),
-                    fluidRow(
-                      column(
-                        offset = 0,
-                        width = 4,
-                        numericInput(
-                          inputId = "blockLevels",
-                          label = "Number of levels",
-                          value = 3,
-                          min = 2,
-                          step = 1
-                        ),
-                      ),
-                      column(
-                        offset = 0,
-                        width = 8,
-                        radioButtons(
-                          inputId = "blockRandom",
-                          label = "Type of effect",
-                          choices = c("Fixed", "Random"),
-                          selected = "Fixed",
-                          inline = TRUE
-                        )
-                      )
-                    )
-                  )
-                )
-              }
-            )
-          }
-        )
-
-        #### Move
-        updateTabsetPanel(
-          session = session,
-          inputId = "builder",
-          selected = "second"
-        )
-      }
-    },
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-  ## Builder Page 2 ----
-  ### Go back to Page 1 ----
-  observeEvent(
-    eventExpr = input$back1,
-    handlerExpr = {
-      updateTabsetPanel(
-        session = session,
-        inputId = "builder",
-        selected = "first"
-      )
-
-      resetInputs(
-        session = session,
-        textList = NULL,
-        numberList = c(
-          getInputNames(pattern = "^me[[:digit:]]{0,}Levels$", input = input),
-          "totalSize"
-        ),
-        radioList = getInputNames(pattern = "Random$", input = input),
-        selectList = getInputNames(pattern = "NestedIn$", input = input)
-      )
-    }
-  )
-
-  ### Clear Page 2 ----
-  observeEvent(
-    eventExpr = input$reset2,
-    handlerExpr = {
-      resetInputs(
-        session = session,
-        textList = NULL,
-        numberList = c(
-          getInputNames(pattern = "^me[[:digit:]]{0,}Levels$", input = input),
-          "totalSize"
-        ),
-        radioList = getInputNames(pattern = "Random$", input = input),
-        selectList = getInputNames(pattern = "NestedIn$", input = input)
-      )
-    },
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-  ### Go to Page 3 ----
-  observeEvent(
-    eventExpr = input$next2,
-    handlerExpr = {
-      #### Error Check ----
-      if (is.null(input$totalSize) || input$totalSize <= 0 || is.na(input$totalSize)) {
-        sendSweetAlert(
-          session = session,
-          title = "Sample Size Error",
-          type = "error",
-          text = "You've not entered a valid sample size. Please fix this issue."
-        )
-      } else {
-
-        #### Apply Random to Main Effects ----
-        temp1 <- getInputNames(pattern = "^me[[:digit:]]{0,}Random$", input = input)
-        for (i in 1:length(temp1)) {
-          if (input[[temp1[i]]] == "Random") {
-            labels$mainEffects[i] <- paste0("(", labels$mainEffects[i], ")")
-          }
-        }
-
-        #### Apply Random to Block ----
-        if (!is.null(input$blockRandom) && input$blockRandom == "Random") {
-          labels$block <- paste0("(", labels$block, ")")
-        }
-
-        #### Interactions: Nesting and Crossing ----
-        ##### Get level values of Main Effects
-        meInputs <- getInputNames(pattern = "^me[[:digit:]]+Levels$", input = input)
-        meValues <- c()
-        for (i in 1:length(meInputs)) {
-          meValues <- c(meValues, input[[meInputs[i]]])
-        }
-        ##### Get nesting elements
-        nesting <- c()
-        nesting <- getInputNames(pattern = "NestedIn$", input = input)
-        nesting <- sapply(
-          X = nesting,
-          FUN = function(x){ return(input[[x]]) },
-          USE.NAMES = FALSE
-        )
-        ##### Test for nesting/crossing
-        noNest <- ifelse(
-          test = all(nesting == "Not nested"),
-          yes = TRUE,
-          no = FALSE
-        )
-        noCross <- ifelse(
-          test = sum(nesting == "Not nested", na.rm = TRUE) == 1,
-          yes = TRUE,
-          no = FALSE
-        )
-        if (noNest) {
-          ##### Create interactions list ----
-          if (length(labels$mainEffects) >= 2) {
-            labels$interactions <- list()
-            for (i in 2:length(labels$mainEffects)) {
-              labels$interactions[[paste0("l", i)]] <- t(
-                combn(
-                  x = labels$mainEffects,
-                  m = i,
-                  simplify = TRUE,
-                  FUN = paste,
-                  collapse = " \U00D7 "
-                )
-              )
-            }
-            labels$interactions <- unlist(labels$interactions)
-
-            ##### Apply Random Effects to Interactions ----
-            temp1 <- sapply(X = labels$interactions, FUN = grepl, pattern = "\\(")
-            for (i in 1:length(temp1)) {
-              if (temp1[i]) {
-                labels$interactions[i] <- gsub(
-                  pattern = "\\({1,}",
-                  replacement = "",
-                  x = labels$interactions[i]
-                )
-                labels$interactions[i] <- gsub(
-                  pattern = "\\){1,}",
-                  replacement = "",
-                  x = labels$interactions[i]
-                )
-                labels$interactions[i] <- paste0("(", labels$interactions[i], ")")
-              }
-            }
-            ##### Set initial interaction levels ----
-            levels <- list()
-            for (i in 2:length(labels$mainEffects)) {
-              levels[[paste0("l", i)]] <- combn(
-                x = meValues,
-                m = i,
-                simplify = TRUE,
-                FUN = prod
-              )
-            }
-            labels$intLevels <- lapply(levels, function(x) x[!is.na(x)])
-            labels$intLevels <- unlist(labels$intLevels)
-
-            ##### Create the interaction level matrix and display ----
-            interactionMatrix <- matrix(
-              data = labels$intLevels,
-              nrow = length(labels$interactions),
-              ncol = 1
-            )
-            row.names(interactionMatrix) <- unname(labels$interactions)
-            updateMatrixInput(
-              session = session,
-              inputId = "interactionLevels",
-              value = interactionMatrix
-            )
-          } else {
-            interactionMatrix <- matrix(
-              data = 0,
-              nrow = 1,
-              ncol = 1
-            )
-            row.names(interactionMatrix) <- "No interactions possible."
-            updateMatrixInput(
-              session = session,
-              inputId = "interactionLevels",
-              value = interactionMatrix
-            )
-          }
-        } else if (noCross) {
-          for (i in 1:length(nesting)) {
-            labels$interactions[i] <- paste(
-              labels$mainEffects[i],
-              "in",
-              nesting[i]
-            )
-            labels$intLevels[i] <- meValues[i] * ifelse(
-              test = nesting[i] == "Not nested",
-              yes = 1,
-              no = input[[paste0("me", which(labels$mainEffects == nesting[i]), "Levels")]]
-            )
-            nestingMatrix <- matrix(
-              data = labels$intLevels,
-              nrow = length(labels$interactions),
-              ncol = 1
-            )
-            row.names(nestingMatrix) <- unname(labels$interactions)
-            updateMatrixInput(
-              session = session,
-              inputId = "interactionLevels",
-              value = nestingMatrix
-            )
-          }
-        } else {
-          print("mix of nest and cross")
-        }
-
-        #### Move tabs ----
-        updateTabsetPanel(
-          session = session,
-          inputId = "builder",
-          selected = "third"
-        )
-      }
-    },
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-  ## Builder Page 3 ----
-
-  ### Go back to Page 2 ----
-  observeEvent(
-    eventExpr = input$back2,
-    handlerExpr = {
-      updateTabsetPanel(
-        session = session,
-        inputId = "builder",
-        selected = "second"
-      )
-      finalLabelFrame(grandMeanRow)
-      interactionMatrix <- NULL
-      labels$intLevels <- NULL
-      labels$interactions <- NULL
-    }
-  )
-
-  ### Go to Page 4 ----
-  observeEvent(
-    eventExpr = input$next3,
-    handlerExpr = {
-      #### Create matrix of labels and levels ----
-      temp1 <- getInputNames("^me[[:digit:]]{0,}Levels$", input = input)
-      temp2 <- c()
-      for (i in 1:length(temp1)) {
-        temp2 <- c(temp2, input[[temp1[i]]])
-      }
-      temp3 <- data.frame(
-        levels = temp2,
-        labels = labels$mainEffects,
-        df = temp2 - 1
-      )
-      temp4 <- data.frame(
-        levels = unname(input$interactionLevels[,1]),
-        labels = unlist(dimnames(input$interactionLevels)[1]),
-        df = unname(input$interactionLevels[,1])
-      )
-      finalLabelFrame(
-        rbind(grandMeanRow, temp3, temp4)
-      )
-      remove(list = c("temp1", "temp2", "temp3", "temp4"))
-      finalLabelFrame(subset(x = finalLabelFrame(), subset = levels > 0))
-      finalLabelFrame(reduceDF(dataFrame = finalLabelFrame()))
-
-      ##### Add Block and Covariates ----
-      if (!is.null(labels$block) && length(labels$block) == 1) {
-        finalLabelFrame(
-          rbind(
-            finalLabelFrame(),
-            data.frame(
-              levels = input$blockLevels,
-              labels = labels$block,
-              df = input$blockLevels - 1
-            )
-          )
-        )
-      }
-      if (!is.null(labels$covariates)) {
-        temp1 <- data.frame(
-          levels = rep("Cov", times = length(labels$covariates)),
-          labels = labels$covariates,
-          df = rep(1, times = length(labels$covariates))
-        )
-        finalLabelFrame(
-          rbind(
-            finalLabelFrame(),
-            temp1
-          )
-        )
-      }
-      ##### Add Final Error Term ----
-      finalLabelFrame(
-        rbind(
-          finalLabelFrame(),
-          data.frame(
-            levels = input$totalSize,
-            labels = "(Error)",
-            df = input$totalSize - sum(finalLabelFrame()$df)
-          )
-        )
-      )
-      labels$matrixLabels <- paste(
-        finalLabelFrame()$levels,
-        finalLabelFrame()$labels,
-        finalLabelFrame()$df
-      )
-
-      #### Error Check and Move tab ----
-      if (any(finalLabelFrame()$df <= 0)) {
-        sendSweetAlert(
-          session = session,
-          title = "Degree of Freedom Error",
-          type = "error",
-          text = "Your inputs have resulted in one or more terms have 0 or negative
-          degrees of freedom. You will need to go back and check both your Total
-          Sample Size as well as any interactions."
-        )
-      } else {
-        updateTabsetPanel(
-          session = session,
-          inputId = "builder",
-          selected = "fourth"
-        )
-      }
-
-    }
-  )
-
-
-  ## Builder Page 4 ----
-  output$hasseDiagram <- renderPlot(
-    expr = {
-      hasseDiagram::hasse(
-        data = makeOrderMatrix(
-          labelList = finalLabelFrame()$labels,
-          block = labels$block,
-          covariates = labels$covariates
-        ),
-        labels = labels$matrixLabels
-      )
-    }
-  )
-
-  output$rCode <- renderText({
-    labs <- paste0('"', labels$matrixLabels, '"', collapse = ", ")
-    mat <- paste0(unname(
-            obj = makeOrderMatrix(
-              labelList = finalLabelFrame()$labels,
-              block = labels$block,
-              covariates = labels$covariates
-            ),
-            force = TRUE
-          ),
-          collapse = ", "
-    )
-     paste0(
-       'modelLabels <- c(', labs, ')
-modelMatrix <- matrix(
-  data = c(', mat, '),
-  nrow = ', length(finalLabelFrame()$labels), ',
-  ncol = ', length(finalLabelFrame()$labels), ',
-  byrow = FALSE
-)
-hasseDiagram::hasse(
- data = modelMatrix,
- labels = modelLabels
-)'
-     )
-  })
-
-  ### Go back to Page 3 ----
-  observeEvent(
-    eventExpr = input$back3,
-    handlerExpr = {
-      updateTabsetPanel(
-        session = session,
-        inputId = "builder",
-        selected = "third"
-      )
-    }
-  )
-
-  ### Start Over ----
-  observeEvent(
-    eventExpr = c(input$reset4, input$reset5),
-    handlerExpr = {
-      updateTabsetPanel(
-        session = session,
-        inputId = "builder",
-        selected = "first"
-      )
-      resetInputs(
-        session = session,
-        textList = c("mainEffects", "block", "covariates"),
-        numberList = c(
-          getInputNames(pattern = "Levels$", input = input),
-          "totalSize"
-        ),
-        radioList = getInputNames(pattern = "Random$", input = input),
-        selectList = getInputNames(pattern = "NestedIn$", input = input)
-      )
-    },
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-  ### Go to Advanced Edit page ----
-  observeEvent(
-    eventExpr = input$next4,
-    handlerExpr = {
-      updateTabsetPanel(
-        session = session,
-        inputId = "builder",
-        selected = "fifth"
-      )
-    }
-  )
-
-  ## Advanced Edit Page ----
-  observeEvent(
-    eventExpr = input$builder,
-    handlerExpr = {
-      if (input$builder == "fifth") {
-        orderMat <- makeOrderMatrix(
-          labelList = finalLabelFrame()$labels,
-          block = labels$block,
-          covariates = labels$covariates
-        )
-        dimnames(orderMat) <- list(labels$matrixLabels, labels$matrixLabels)
-        updateMatrixInput(
-          session = session,
-          inputId = "advEdit",
-          value = orderMat
-        )
-      }
-    }
-  )
-
-  observeEvent(
-    eventExpr = input$updateLabels,
-    handlerExpr = {
-      mat <- input$advEdit
-      dimnames(mat)[[2]] <- dimnames(mat)[[1]]
-      updateMatrixInput(
-        session = session,
-        inputId = "advEdit",
-        value = mat
-      )
-    },
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-  observeEvent(
-    eventExpr = input$addRowCol,
-    handlerExpr = {
-      mat <- rbind(input$advEdit, rep(FALSE, ncol(input$advEdit)))
-      mat <- cbind(mat, rep(FALSE, nrow(mat)))
-      dimnames(mat) <- list(c(dimnames(input$advEdit)[[1]],
-                              "new term"), c(dimnames(input$advEdit)[[2]], "new term"))
-      updateMatrixInput(
-        session = session,
-        inputId = "advEdit",
-        value = mat
-      )
-    },
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-  observeEvent(
-    eventExpr = input$removeRowCol,
-    handlerExpr = {
-      mat <- input$advEdit[-nrow(input$advEdit), -ncol(input$advEdit)]
-      updateMatrixInput(
-        session = session,
-        inputId = "advEdit",
-        value = mat
-      )
-    },
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-  observeEvent(
-    eventExpr = input$updateDiagram,
-    handlerExpr = {
-      mat <- as.matrix(input$advEdit)
-      mat <- apply(X = mat, MARGIN = c(1, 2), FUN = as.logical)
-      output$newHasseDiagram <- renderPlot(
-        expr = {
-          hasseDiagram::hasse(
-            data = mat
-          )
-        }
-      )
-
-      output$newRCode <- renderText({
-        labs <- paste0('"', dimnames(input$advEdit)[[1]], '"', collapse = ", ")
-        mat <- paste0(
-          unname(obj = mat, force = TRUE),
-          collapse = ", "
-        )
-        paste0(
-          'modelLabels <- c(', labs, ')
-modelMatrix <- matrix(
-  data = c(', mat, '),
-  nrow = ', length(dimnames(input$advEdit)[[1]]), ',
-  ncol = ', length(dimnames(input$advEdit)[[1]]), ',
-  byrow = FALSE
-)
-hasseDiagram::hasse(
- data = modelMatrix,
- labels = modelLabels
-)'
-        )
-      })
-    },
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-### Go back to Page 3 ----
-observeEvent(
-  eventExpr = input$back4,
-  handlerExpr = {
-    updateTabsetPanel(
-      session = session,
-      inputId = "builder",
-      selected = "fourth"
-    )
-  }
-)
-
 }
 
 # Boast App Call ----
-boastUtils::boastApp(ui = ui, server = server, config = list(log = FALSE))
+boastUtils::boastApp(ui = ui, server = server)

@@ -1,6 +1,6 @@
 Title: Hasse Diagrams
 ShortName: Hasse Diagrams
-Date: 2020-12-14
+Date: 2020-2-14
 Lifecycle: experimental
 Authors@R: c(
     person(given = "Neil", family = "Hatfield", email = "njh5464@psu.edu", role = c("aut", "cre"))

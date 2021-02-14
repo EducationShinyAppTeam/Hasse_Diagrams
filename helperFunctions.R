@@ -1,4 +1,4 @@
-library(stringr)
+# Helper Functions for the Hasse Diagrams Shiny App
 
 # Survey Link Function ----
 linkSurvey <- function(repoName){
@@ -266,85 +266,6 @@ fixDegrees <- function(target, dataFrame) {
   newDegrees <- targetLevels - adj - 1
   return(newDegrees)
 }
-# OLD Reduce Degrees of Freedom Function ----
-reduceDF <- function(dataFrame){
-  temp1 <- dataFrame
-  temp2 <- sapply(X = dataFrame$labels, FUN = grepl, pattern = "\\(")
-  for (i in 1:length(temp2)) {
-    if (temp2[i]) {
-      temp1$labels[i] <- gsub(
-        pattern = "\\({1,}",
-        replacement = "",
-        x = temp1$labels[i]
-      )
-      temp1$labels[i] <- gsub(
-        pattern = "\\){1,}",
-        replacement = "",
-        x = temp1$labels[i]
-      )
-    }
-  }
-  for (i in 1:(nrow(temp1) - 1)) {
-    elements <- unlist(strsplit(x = temp1$labels[i], split = " \U00D7 ", fixed = TRUE))
-    for (j in (i + 1):(nrow(temp1))) {
-      if (all(stringr::str_detect(string = temp1$labels[j], pattern = elements))) {
-        temp1$df[j] <- temp1$df[j] - temp1$df[i]
-      }
-    }
-  }
-  temp1$labels <- dataFrame$labels
-  return(temp1)
-}
-
-# OLD Make Ordering Matrix Function ----
-makeOrderMatrix <- function(labelList, block = NULL, covariates = NULL){
-  if (length(block) == 0) {block <- NULL}
-  if (length(covariates) == 0) {covariates <- NULL}
-  orderMat <- matrix(
-    data = FALSE,
-    nrow = length(labelList),
-    ncol = length(labelList),
-    dimnames = list(labelList, labelList)
-  )
-  temp1 <- labelList
-  temp2 <- sapply(X = temp1, FUN = grepl, pattern = "\\(")
-  for (i in 1:length(temp2)) {
-    if (temp2[i]) {
-      temp1[i] <- gsub(
-        pattern = "\\({1,}",
-        replacement = "",
-        x = temp1[i]
-      )
-      temp1[i] <- gsub(
-        pattern = "\\){1,}",
-        replacement = "",
-        x = temp1[i]
-      )
-    }
-  }
-  for (i in 1:length(labelList)) {
-    if (grepl(pattern = "\\(Error\\)", x = labelList[i])) {
-      next
-    } else {
-      elements <- unlist(strsplit(x = temp1[i], split = " \U00D7 ", fixed = TRUE))
-      for (j in (i + 1):length(labelList)) {
-        if (grepl(pattern = "Grand Mean", x = temp1[i], fixed = TRUE)) {
-          orderMat[labelList[i], labelList[j]] <- TRUE
-        } else if (
-          all(
-            any(labelList[j] != block, is.null(block), is.na(block)),
-            any(!(labelList[j] %in% covariates), is.null(covariates), is.na(covariates)),
-            all(stringr::str_detect(string = temp1[j], pattern = elements))
-          )) {
-          orderMat[labelList[i], labelList[j]] <- TRUE
-        } else if (grepl(pattern = "\\(Error\\)", x = labelList[j])) {
-          orderMat[labelList[i], labelList[j]] <- TRUE
-        }
-      }
-    }
-  }
-  return(orderMat)
-}
 
 # Make Hasse Diagram Elements
 hasseElements <- function(dataFrame, dfCheck) {
@@ -445,7 +366,6 @@ hasseElements <- function(dataFrame, dfCheck) {
       diagramMat[i, parentOf] <- TRUE
     }
   }
-
 
   return(list(matrix = diagramMat, labels = labels))
 }
