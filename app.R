@@ -1502,11 +1502,11 @@ server <- function(input, output, session) {
         input = input
       )
       mainLevelInputs <- getInputNames(
-        pattern = "^wizME[[:digit:]]{0,1}Levels",
+        pattern = "^wizME[[:digit:]]{0,1}Levels$",
         input = input
       )
       mainNestInputs <- getInputNames(
-        pattern = "^wizME[[:digit:]]{0,1}NestedIn",
+        pattern = "^wizME[[:digit:]]{0,1}NestedIn$",
         input = input
       )
       sapply(
@@ -2074,9 +2074,9 @@ hasseDiagram::hasse(
   )
 
   ### Reset Buttons ----
-  #### Reset Step 1
+  #### Reset Step 1 ----
   observeEvent(
-    eventExpr = input$wizReset1,
+    eventExpr = c(input$wizReset1, input$wizReset5),
     handlerExpr = {
       updateTextInput(
         session = session,
@@ -2107,9 +2107,10 @@ hasseDiagram::hasse(
     ignoreNULL = TRUE,
     ignoreInit = TRUE
   )
-  #### Reset Step 2
+
+  #### Reset Step 2 ----
   observeEvent(
-    eventExpr = input$wizReset2,
+    eventExpr = c(input$wizReset2, input$wizReset5),
     handlerExpr = {
       updateTextInput(
         session = session,
@@ -2133,7 +2134,68 @@ hasseDiagram::hasse(
     ignoreNULL = TRUE,
     ignoreInit = TRUE
   )
+  #### Reset Step 3 ----
+  observeEvent(
+    eventExpr = c(input$wizReset3, input$wizReset5),
+    handlerExpr = {
+      resetInputs(
+        session = session,
+        numberList = c(
+          getInputNames(
+            pattern = "^wizME[[:digit:]]{0,1}Levels$",
+            input = input
+          ),
+          "wizBlockLevels"
+        ),
+        radioList = c(
+          getInputNames(
+            pattern = "^wizME[[:digit:]]{0,1}Random$",
+            input = input
+          ),
+          "wizBlockRandom"
+        ),
+        selectList = getInputNames(
+          pattern = "^wizME[[:digit:]]{0,1}NestedIn$",
+          input = input
+        )
+      )
+    },
+    ignoreInit = TRUE,
+    ignoreNULL = TRUE
+  )
 
+  #### Reset Step 4 ----
+  observeEvent(
+    eventExpr = c(input$wizReset4, input$wizReset5),
+    handlerExpr = {
+      updateMatrixInput(
+        session = session,
+        inputId = "wizHOLevels",
+        value = crossList()
+      )
+      updateSwitchInput(
+        session = session,
+        inputId = "wizTrackDF",
+        value = TRUE
+      )
+    },
+    ignoreInit = TRUE,
+    ignoreNULL = TRUE
+  )
+
+  #### Clear All ----
+  observeEvent(
+    eventExpr = input$wizReset5,
+    handlerExpr = {
+      updateTabsetPanel(
+        session = session,
+        inputId = "diagramWiz",
+        selected = "S1"
+      )
+    },
+    ignoreInit = TRUE,
+    ignoreNULL = TRUE
+  )
 
   ### Additional Navigation Buttons ----
   observeEvent(
@@ -2183,6 +2245,58 @@ hasseDiagram::hasse(
     },
     ignoreNULL = TRUE,
     ignoreInit = TRUE
+  )
+
+  ## Passive Actions for Steps 3 and 4 ----
+  observeEvent(
+    eventExpr = c(
+      input$wizBlockLevels,
+      input$wizBlockRandom,
+      paste0(
+        "input[[",
+        getInputNames(
+          pattern = "^wizME[[:digit:]]{0,1}Levels$",
+          input = input),
+        "]]"
+      ),
+      input$wizReset3,
+      input$wisBS2
+    ),
+    handlerExpr = {
+      updateButton(
+        session = session,
+        inputId = "wizSaveValues1",
+        label = "Save values",
+        disabled = FALSE
+      )
+      updateButton(
+        session = session,
+        inputId = "wizFS4",
+        disabled = TRUE
+      )
+    }
+  )
+
+  observeEvent(
+    eventExpr = c(
+      input$wizHOLevels,
+      input$wizTrackDF,
+      input$wizReset4,
+      input$wizBS3
+    ),
+    handlerExpr = {
+      updateButton(
+        session = session,
+        inputId = "wizSaveValues2",
+        label = "Save values",
+        disabled = FALSE
+      )
+      updateButton(
+        session = session,
+        inputId = "wizFS5",
+        disabled = TRUE
+      )
+    }
   )
 
 

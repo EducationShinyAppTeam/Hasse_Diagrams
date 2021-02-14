@@ -94,7 +94,7 @@ resetInputs <- function(session, defaults = NULL, textList = NULL,
   if (is.null(defaults)) {
     defaults <- list(
       "text" = "",
-      "number" = 2,
+      "number" = 3,
       "switch" = FALSE,
       "check" = FALSE,
       "radio" = "Fixed",
