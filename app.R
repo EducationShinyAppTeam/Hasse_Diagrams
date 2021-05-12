@@ -266,10 +266,20 @@ ui <- list(
             tabPanel(
               title = "First Step",
               value = "S1",
+              h3("Response"),
+              p("Please provide/describe the the primary/surogate response for
+                your study."),
+              textInput(
+                inputId = "responseName",
+                label = "Name the response for the study",
+                value = "response",
+                placeholder = "name of response"
+              ),
               h3("Main Action"),
-              p("Please provide the following information about the action which leads to the
-                primary/surogate response for your study. You may choose to use
-                the default values of 'Grand Mean' and 1 if you wish."),
+              p("Please provide the following information about the action which
+                leads to the primary/surogate response for your study. You may
+                choose to use the default values of 'Grand Mean' and 1 if you
+                wish."),
               fluidRow(
                 column(
                   width = 4,
@@ -879,6 +889,7 @@ server <- function(input, output, session) {
     handlerExpr = {
       actionNameError <- FALSE
       errorNameError <- FALSE
+      responseModelError <- FALSE
       #### Check for Errors
       if (is.null(input$actionName) || input$actionName == "") {
         actionNameError <- TRUE
@@ -886,96 +897,114 @@ server <- function(input, output, session) {
       if (is.null(input$errorName) || input$errorName == "") {
         errorNameError <- TRUE
       }
-
-      #### Fix any errors with inputs
-      if (actionNameError && !errorNameError) {
-        sendSweetAlert(
-          session = session,
-          title = "Error in Action Name",
-          text = paste("Error in the action name; using 'Grand Mean' instead and",
-                       "moving on. You may use the Back button to return to the",
-                       "previous screen and change the action name."),
-          type = "error"
-        )
-        updateTextInput(
-          session = session,
-          inputId = "actionName",
-          value = "Grand Mean"
-        )
-      } else if (!actionNameError && errorNameError) {
-        sendSweetAlert(
-          session = session,
-          title = "Error in Measurement Unit",
-          text = paste("Error in the measurement unit name; using '(Error)'",
-                       "instead and moving on. You may use the Back button to",
-                       "return to the previous screen and change the measurement",
-                       "unit name."),
-          type = "error"
-        )
-        updateTextInput(
-          session = session,
-          inputId = "errorName",
-          value = "(Error)"
-        )
-      } else if (actionNameError && errorNameError) {
-        sendSweetAlert(
-          session = session,
-          title = "Error in Action Name & Measurement Unit",
-          text = paste("Error in both the action and measurement unit names;",
-                       "using 'Grand Mean' and '(Error)' instead and moving on.",
-                       "You may use the Back button to return to the previous ",
-                       "screen and change both values to something else."),
-          type = "error"
-        )
-        updateTextInput(
-          session = session,
-          inputId = "actionName",
-          value = "Grand Mean"
-        )
-        updateTextInput(
-          session = session,
-          inputId = "errorName",
-          value = "(Error)"
-        )
+      if (input$responseName == input$actionName ||
+          input$responseName == removeParens(input$errorName) ||
+          input$actionName == removeParens(input$errorName)) {
+        responseModelError <- TRUE
       }
 
-      #### Apply Fixed/Random Effect to Measurement Units
-      if (input$errorType == "Fixed") {
-        if (input$errorName == "") {
-          tempErrorName <- "(Error)"
-        } else {
-          tempErrorName <- input$errorName
-        }
-        tempErrorName <- removeParens(text = tempErrorName)
-
-        updateTextInput(
+     if (responseModelError) {
+        sendSweetAlert(
           session = session,
-          inputId = "errorName",
-          value = tempErrorName
+          title = "Response Model Error",
+          text = paste("Opps! Looks like you're trying to use the response in",
+                       "your model. For example, you're trying to use the response",
+                       "as your Main Action and/or your measurement unit. You
+                       can't do this. You'll need to fix this issue."),
+          type = "error"
         )
-      } else if (input$errorType == "Random") {
-        if (input$errorName == "") {
-          updateTextInput(
-            session = session,
-            inputId = "errorName",
-            value = "(Error)"
-          )
-        } else {
-          tempErrorName <- addParens(text = input$errorName)
-          updateTextInput(
-            session = session,
-            inputId = "errorName",
-            value = tempErrorName
-          )
-        }
+     } else {
+       #### Fix any errors with inputs
+       if (actionNameError && !errorNameError) {
+         sendSweetAlert(
+           session = session,
+           title = "Error in Action Name",
+           text = paste("Error in the action name; using 'Grand Mean' instead and",
+                        "moving on. You may use the Back button to return to the",
+                        "previous screen and change the action name."),
+           type = "error"
+         )
+         updateTextInput(
+           session = session,
+           inputId = "actionName",
+           value = "Grand Mean"
+         )
+       } else if (!actionNameError && errorNameError) {
+         sendSweetAlert(
+           session = session,
+           title = "Error in Measurement Unit",
+           text = paste("Error in the measurement unit name; using '(Error)'",
+                        "instead and moving on. You may use the Back button to",
+                        "return to the previous screen and change the measurement",
+                        "unit name."),
+           type = "error"
+         )
+         updateTextInput(
+           session = session,
+           inputId = "errorName",
+           value = "(Error)"
+         )
+       } else if (actionNameError && errorNameError) {
+         sendSweetAlert(
+           session = session,
+           title = "Error in Action Name & Measurement Unit",
+           text = paste("Error in both the action and measurement unit names;",
+                        "using 'Grand Mean' and '(Error)' instead and moving on.",
+                        "You may use the Back button to return to the previous ",
+                        "screen and change both values to something else."),
+           type = "error"
+         )
+         updateTextInput(
+           session = session,
+           inputId = "actionName",
+           value = "Grand Mean"
+         )
+         updateTextInput(
+           session = session,
+           inputId = "errorName",
+           value = "(Error)"
+         )
+       }
+
+       #### Apply Fixed/Random Effect to Measurement Units
+       if (input$errorType == "Fixed") {
+         if (input$errorName == "") {
+           tempErrorName <- "(Error)"
+         } else {
+           tempErrorName <- input$errorName
+         }
+         tempErrorName <- removeParens(text = tempErrorName)
+
+         updateTextInput(
+           session = session,
+           inputId = "errorName",
+           value = tempErrorName
+         )
+       } else if (input$errorType == "Random") {
+         if (input$errorName == "") {
+           updateTextInput(
+             session = session,
+             inputId = "errorName",
+             value = "(Error)"
+           )
+         } else {
+           tempErrorName <- addParens(text = input$errorName)
+           updateTextInput(
+             session = session,
+             inputId = "errorName",
+             value = tempErrorName
+           )
+         }
+       }
+
+       ##### Move
+       updateTabsetPanel(
+         session = session,
+         inputId = "diagramWiz",
+         selected = "S2"
+       )
       }
 
-      ##### Move
-      updateTabsetPanel(
-        session = session,
-        inputId = "diagramWiz",
-        selected = "S2"
-      )
     },
     ignoreNULL = TRUE,
     ignoreInit = TRUE
