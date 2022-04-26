@@ -1,14 +1,5 @@
 # Helper Functions for the Hasse Diagrams Shiny App
 
-# Survey Link Function ----
-linkSurvey <- function(repoName){
-  link <- paste0(
-    "https://pennstate.qualtrics.com/jfe/form/SV_7TLIkFtJEJ7fEPz?appName=",
-    repoName
-  )
-  return(link)
-}
-
 # Add/Remove Parentheses Functions ----
 removeParens <- function(text){
   tempText <- text

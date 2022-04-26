@@ -35,9 +35,7 @@ ui <- list(
       tags$li(class = "dropdown", actionLink("info", icon("info"))),
       tags$li(
         class = "dropdown",
-        tags$a(target = "_blank", icon("comments"),
-               href = linkSurvey("Hasse_Diagrams")
-        )
+        boastUtils::surveyLink(name = "Hasse_Diagrams") 
       ),
       tags$li(class = "dropdown",
               tags$a(href = 'https://shinyapps.science.psu.edu/',
@@ -47,7 +45,7 @@ ui <- list(
     dashboardSidebar(
       sidebarMenu(
         id = "pages",
-        menuItem("Overview", tabName = "overview", icon = icon("dashboard")),
+        menuItem("Overview", tabName = "overview", icon = icon("tachometer-alt")),
         menuItem("Explore", tabName = "explore", icon = icon("wpexplorer")),
         menuItem("Diagram Wizard", tabName = "wizard", icon = icon("hat-wizard")),
         menuItem("References", tabName = "references", icon = icon("leanpub"))
@@ -101,7 +99,7 @@ ui <- list(
             br(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 2/14/2021 by NJH.")
+            div(class = "updated", "Last Update: 4/26/2022 by NJH.")
           )
         ),
         #### Explore Page ----
@@ -1605,17 +1603,14 @@ server <- function(input, output, session) {
         )
 
       ##### Fix Missing Degrees of Freedom
-      masterDF$degrees <- sapply(
-        X = 1:length(masterDF$degrees),
-        FUN = function(x){
-          if (is.na(masterDF$degrees[x])) {
-            fixDegrees(target = masterDF$useName[x], dataFrame = masterDF)
-          } else {
-            temp1$degrees[x]
-          }
-        },
-        USE.NAMES = FALSE
-      )
+      for (i in 1:nrow(masterDF)) {
+        if (is.na(masterDF$degrees[i])) {
+          masterDF$degrees[i] = fixDegrees(target = masterDF$useName[i], dataFrame = masterDF)
+        } else {
+          next
+        }
+      }
+
 
       ##### Add Error Term
       errDF <- data.frame(
@@ -1766,6 +1761,11 @@ hasseDiagram::hasse(
   observeEvent(
     eventExpr = c(input$wizReset1, input$wizReset5),
     handlerExpr = {
+      updateTextInput(
+        session = session,
+        inputId = "responseName",
+        value = "response"
+      )
       updateTextInput(
         session = session,
         inputId = "actionName",
