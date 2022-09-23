@@ -39,14 +39,14 @@ ui <- list(
       ),
       tags$li(class = "dropdown",
               tags$a(href = 'https://shinyapps.science.psu.edu/',
-                     icon("home")))
+                     icon("house")))
     ),
     ### Create the sidebar/left navigation menu ----
     dashboardSidebar(
       sidebarMenu(
         id = "pages",
-        menuItem("Overview", tabName = "overview", icon = icon("tachometer-alt")),
-        menuItem("Explore", tabName = "explore", icon = icon("wpexplorer")),
+        menuItem("Overview", tabName = "overview", icon = icon("gauge-high")),
+        menuItem("Example Diagrams", tabName = "example", icon = icon("book-open-reader")),
         menuItem("Diagram Wizard", tabName = "wizard", icon = icon("hat-wizard")),
         menuItem("References", tabName = "references", icon = icon("leanpub"))
       ),
@@ -69,7 +69,7 @@ ui <- list(
           p("There are two major parts of this app:"),
           tags$ul(
             tags$li(
-              tags$strong("Explore a Diagram: "),
+              tags$strong("Example Diagrams: "),
               "where you can learn more about Hasse diagrams including their use
               and how to read them."
             ),
@@ -102,11 +102,11 @@ ui <- list(
             div(class = "updated", "Last Update: 4/26/2022 by NJH.")
           )
         ),
-        #### Explore Page ----
+        #### Example Page ----
         tabItem(
-          tabName = "explore",
+          tabName = "example",
           withMathJax(),
-          h2("Exploring Hasse Diagrams"),
+          h2("Example Hasse Diagrams"),
           p(
             "Hasse diagrams (also known as poset or factor structure diagrams)
             serve as a way to visualize the model for an experiment or observational
@@ -491,7 +491,7 @@ ui <- list(
                     bsButton(
                       inputId = "wizSaveValues1",
                       label = "Save values",
-                      icon = icon("save"),
+                      icon = icon("floppy-disk"),
                       size = "large"
                     )
                   )
@@ -604,7 +604,7 @@ ui <- list(
                     bsButton(
                       inputId = "wizSaveValues2",
                       label = "Save values",
-                      icon = icon("save"),
+                      icon = icon("floppy-disk"),
                       size = "large"
                     )
                   )
@@ -671,7 +671,7 @@ ui <- list(
                     bsButton(
                       inputId = "wizReset5",
                       label = "Start over",
-                      icon = icon("exclamation-triangle"),
+                      icon = icon("triangle-exclamation"),
                       style = "danger",
                       size = "large"
                     )
@@ -800,7 +800,7 @@ server <- function(input, output, session) {
           "Use the app in two ways:",
           tags$ol(
             tags$li(
-              "Click on the ", tags$strong("Explore"), " page to explore how to
+              "Click on the ", tags$strong("Example"), " page to explore how to
               read Hasse Diagrams and how to use them to figure out the proper
               denominator to use to test a give node/term."
             ),
@@ -828,7 +828,7 @@ server <- function(input, output, session) {
       updateTabItems(
         session = session,
         inputId = "pages",
-        selected = "explore"
+        selected = "example"
       )
     }
   )
