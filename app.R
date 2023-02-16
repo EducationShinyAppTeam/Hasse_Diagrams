@@ -10,6 +10,7 @@ library(stringr)
 library(dplyr)
 library(tibble)
 library(DT)
+library(rclipboard)
 
 # Define global constants and functions, load data ----
 ## Helper functions are located in the following file
@@ -255,6 +256,7 @@ ui <- list(
         tabItem(
           tabName = "wizard",
           withMathJax(),
+          rclipboardSetup(),
           h2("Hasse Diagram Wizard"),
           p("Follow the prompts to create a Hasse Diagram."),
           tabsetPanel(
@@ -647,7 +649,20 @@ ui <- list(
               p("If you are using R Markdown (or R), you can copy the following
                 code to paste into a code chunk or your console to create your
                 Hasse diagram."),
-              verbatimTextOutput("wizRCode"),
+              fluidRow(
+                column(
+                  width = 8,
+                  verbatimTextOutput("wizRCode")
+                ),
+                column(
+                  width = 4,
+                  br(),
+                  br(),
+                  br(),
+                  br(),
+                  uiOutput("clipboard")
+                )
+              ),
               p(tags$em("Note: "), "you'll need to first have the appropriate
                 packages installed as well as loaded in your current R session."),
               fluidRow(
@@ -1722,16 +1737,15 @@ server <- function(input, output, session) {
       )
 
       #### Build Code
-      output$wizRCode <- renderText({
-        labs <- paste0('"', hasseList$labels, '"', collapse = ", ")
-        mat <- paste0(unname(
-          obj = hasseList$matrix,
-          force = TRUE
-        ),
-        collapse = ", "
-        )
-        paste0(
-          'modelLabels <- c(', labs, ')
+      labs <- paste0('"', hasseList$labels, '"', collapse = ", ")
+      mat <- paste0(unname(
+        obj = hasseList$matrix,
+        force = TRUE
+      ),
+      collapse = ", "
+      )
+      genCode <- paste0(
+        'modelLabels <- c(', labs, ')
 modelMatrix <- matrix(
   data = c(', mat, '),
   nrow = ', length(hasseList$labels), ',
@@ -1742,6 +1756,20 @@ hasseDiagram::hasse(
  data = modelMatrix,
  labels = modelLabels
 )'
+      )
+      
+      output$wizRCode <- renderText({
+        genCode
+      })
+      
+      #### Clipboard ----
+      output$clipboard <- renderUI({
+        rclipButton(
+          inputId = "clipBtn",
+          label = "Copy code",
+          clipText = genCode,
+          icon = icon("copy"),
+          class = "btn-lg"
         )
       })
 
