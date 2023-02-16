@@ -650,17 +650,18 @@ ui <- list(
                 code to paste into a code chunk or your console to create your
                 Hasse diagram."),
               fluidRow(
+                class = "d-flex",
                 column(
                   width = 8,
                   verbatimTextOutput("wizRCode")
                 ),
                 column(
+                  class = "d-flex",
                   width = 4,
-                  br(),
-                  br(),
-                  br(),
-                  br(),
-                  uiOutput("clipboard")
+                  div(
+                    class = "align-self-center",
+                    uiOutput("clipboard")
+                  )
                 )
               ),
               p(tags$em("Note: "), "you'll need to first have the appropriate
