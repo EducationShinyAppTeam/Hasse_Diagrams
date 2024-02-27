@@ -36,7 +36,7 @@ ui <- list(
       tags$li(class = "dropdown", actionLink("info", icon("info"))),
       tags$li(
         class = "dropdown",
-        boastUtils::surveyLink(name = "Hasse_Diagrams") 
+        boastUtils::surveyLink(name = "Hasse_Diagrams")
       ),
       tags$li(class = "dropdown",
               tags$a(href = 'https://shinyapps.science.psu.edu/',
@@ -100,7 +100,7 @@ ui <- list(
             br(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 2/16/2023 by NJH.")
+            div(class = "updated", "Last Update: 2/27/2024 by NJH.")
           )
         ),
         #### Example Page ----
@@ -1746,7 +1746,8 @@ server <- function(input, output, session) {
       collapse = ", "
       )
       genCode <- paste0(
-        'modelLabels <- c(', labs, ')
+        'library(hasseDiagram)
+modelLabels <- c(', labs, ')
 modelMatrix <- matrix(
   data = c(', mat, '),
   nrow = ', length(hasseList$labels), ',
@@ -1758,11 +1759,11 @@ hasseDiagram::hasse(
  labels = modelLabels
 )'
       )
-      
+
       output$wizRCode <- renderText({
         genCode
       })
-      
+
       #### Clipboard ----
       output$clipboard <- renderUI({
         rclipButton(
